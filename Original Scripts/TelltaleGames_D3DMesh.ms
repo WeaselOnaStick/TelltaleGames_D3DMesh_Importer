@@ -23,8 +23,8 @@
 -- Version 38: The Walking Dead: A New Frontier [PC / PS4, "EOS" / "UpdatedMeshes"]
 -- Version 39 [UNSUPPORTED]: Guardians of the Galaxy: The Telltale Series [PS4 Ep. 1]
 -- Version 42: Guardians of the Galaxy: The Telltale Series [PC]
--- Version 45: Batman: The Enemy Within, Minecraft: Story Mode – Season Two [PC / PS4]
--- Version 46: Batman: The Telltale Series [PC, newest (08/08/17, "Noir" patch)], Minecraft: Story Mode – Season Two [PC / PS4, Miscellaneous] The Walking Dead Collection [PS4]
+-- Version 45: Batman: The Enemy Within, Minecraft: Story Mode ï¿½ Season Two [PC / PS4]
+-- Version 46: Batman: The Telltale Series [PC, newest (08/08/17, "Noir" patch)], Minecraft: Story Mode ï¿½ Season Two [PC / PS4, Miscellaneous] The Walking Dead Collection [PS4]
 -- Version 55: The Walking Dead: The Final Season [PC], The Walking Dead: The Telltale Definitive Series [PC], Sam & Max: Save the World / Beyond Time and Space Remastered [PC]
 
 -- Known bugs:
@@ -118,7 +118,7 @@
 -- Updated the heck out of all of the older importers so that nothing should error anymore.
 -- Fixed certain SBCG4AP Episode 1 models with triangle strips (eg. adv_strongbadhouseinterior_meshesa/c) so they are no longer missing polygons.
 
-print "Setting things up..."
+-- print"Setting things up..."
 BoneHash_array = #()
 TexHash_array = #()
 AllVert_array = #()
@@ -221,7 +221,16 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 	checkbox tglVertColors "Vertex colours?" pos:[160,130] tooltip: "If enabled, this will import the vertex colouring to models (if available). Certain games treat vertex coloring differently, so for example if a model appears black, you can disable this option and re-import." checked: true
 	checkbox tglDebug "Print debug?" pos:[280,130] tooltip: "Enable this to print useless information to the Listener window." checked: false
 	label lblEarlyGameOptions "Early Game Import Fixes:" pos:[17,150]
-	dropDownList lstEarlyGameFix width:350 pos:[17,165] items:#("Texas Hold'em / Bone / CSI 3/4 / Sam and Max S1/S2 (Ep. 1/2)","Sam and Max Season 2 (Ep. 3/4)","Sam and Max Season 2 (Ep. 5 - What's New, Beelzebub?)","Strong Bad's CG4AP (Ep. 1 - Homestar Ruiner)","Strong Bad's CG4AP (Ep. 2 - Strong Badia the Free)","Strong Bad's CG4AP (Ep. 3 - Baddest of the Bands)","Strong Bad's CG4AP (Ep. 4 - Dangeresque 3)","Strong Bad's CG4AP (Ep. 5 - 8-Bit is Enough)","Wallace and Gromit (Ep. 1-3)")
+	dropDownList lstEarlyGameFix width:350 pos:[17,165] 
+    items:#(
+        "Texas Hold'em / Bone / CSI 3/4 / Sam and Max S1/S2 (Ep. 1/2)",
+        "Sam and Max Season 2 (Ep. 3/4)","Sam and Max Season 2 (Ep. 5 - What's New, Beelzebub?)",
+        "Strong Bad's CG4AP (Ep. 1 - Homestar Ruiner)",
+        "Strong Bad's CG4AP (Ep. 2 - Strong Badia the Free)",
+        "Strong Bad's CG4AP (Ep. 3 - Baddest of the Bands)",
+        "Strong Bad's CG4AP (Ep. 4 - Dangeresque 3)",
+        "Strong Bad's CG4AP (Ep. 5 - 8-Bit is Enough)",
+        "Wallace and Gromit (Ep. 1-3)")
 	label SetTextExplanation "Telltale did multiple tweaks to the file formats for their earliest games (even mid-season!) and didn't use proper model version numbering until Jurassic Park, so you'll have to manually choose the game you're importing from above, as I can't automate the entire process."  pos:[17,190] width:350 height:55
 	
 	groupBox SupportedGames "Supported Games:" pos:[388,8] width:260 height:290
@@ -858,8 +867,8 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 							)
 						) else (printDebug("Headerless D3DMesh"); fseek f 0x00 #seek_set)
 					)
-					1296189774:(
-						-- "MBIN"
+					1296189774:( -- "MBIN"
+						
 						ParamCount = readlong f #unsigned
 						ParamHashCheck = readlong f #unsigned
 						fseek f -0x04 #seek_cur
@@ -875,8 +884,8 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 							)
 						)
 					)
-					1297371717:(
-						-- "MTRE"
+					1297371717:( -- "MTRE"
+						
 						ParamCount = readlong f #unsigned
 						ParamHashCheck = readlong f #unsigned
 						fseek f -0x04 #seek_cur
@@ -892,8 +901,8 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 							)
 						)
 					)
-					1297307189:(
-						-- "MSV5"
+					1297307189:( -- "MSV5"
+						
 						FileSize = readlong f #unsigned
 						fseek f 0x08 #seek_cur
 						ParamCount = readlong f #unsigned
@@ -901,8 +910,8 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 							fseek f 0x0C #seek_cur
 						)
 					)
-					1297307190:(
-						-- "MSV6"
+					1297307190:( -- "MSV6"
+						
 						FileSize = readlong f #unsigned
 						fseek f 0x08 #seek_cur
 						ParamCount = readlong f #unsigned
@@ -921,7 +930,8 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 				)
 				D3DName = ReadFixedString f D3DNameLength
 				VerNum = readbyte f #unsigned
-				if (VerNum == 48) or (VerNum == 49) do (VerNum = 0) -- "Version 0" games use the ASCII hex code for "0" or "1" to indicate unrigged or rigged models, in the place where the version number would be in later titles. Thankfully no other games use these two numbers!
+				if (VerNum == 48) or (VerNum == 49) do (VerNum = 0) 
+				-- "Version 0" games use the ASCII hex code for "0" or "1" to indicate unrigged or rigged models, in the place where the version number would be in later titles. Thankfully no other games use these two numbers!
 				print ("Importing " + D3DName + " (Version " + VerNum as string + ")...")
 
 				if q == 1 do (
@@ -1024,7 +1034,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									for y = 1 to BoneHash_array.count do (
 										if BoneHash1 == BoneHash_array[y].BoneHash1 and BoneHash2 == BoneHash_array[y].BoneHash2 do (
 											BoneName = BoneHash_array[y].BoneString
-											exit()
+											--exit()
 										)
 									)
 									append BoneName_array BoneName
@@ -2829,7 +2839,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												exit()
+												--exit()
 											)
 										)
 										append ProperBoneID_array BoneName
@@ -3500,7 +3510,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												exit()
+												-- exit()
 											)
 										)
 										append ProperBoneID_array BoneName
@@ -4210,7 +4220,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												exit()
+												-- exit()
 											)
 										)
 										append ProperBoneID_array BoneName
@@ -4477,7 +4487,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									for y = 1 to TexHash_array.count do (
 										if TexHash1 == TexHash_array [y].TexHash1 and TexHash2 == TexHash_array [y].TexHash2 do (
 											TexName = TexHash_array [y].TexString
-											exit()
+											-- exit()
 										)
 									)
 									case m of (
@@ -6826,7 +6836,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									mat = MultiMat.materialList[m]
 									mat.name = TexName_array [m] as string
 									mat.showinviewport = true
-	-- 								mat.diffuse = (MatColor_array[m] * 255)
+									-- mat.diffuse = (MatColor_array[m] * 255)
 									case of (
 										(TexFormat == 1 and TexPath == 1):(tm = Bitmaptexture filename:(BasePath + mat.name + ".dds"))
 										(TexFormat == 1 and TexPath == 2):(tm = Bitmaptexture filename:(BasePath + "Textures/" + mat.name + ".dds"))
@@ -8012,7 +8022,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									mat = MultiMat.materialList[m]
 									mat.name = TexName_array [m] as string
 									mat.showinviewport = true
-	-- 								mat.diffuse = (MatColor_array[m] * 255)
+		 								-- mat.diffuse = (MatColor_array[m] * 255)
 									case of (
 										(TexFormat == 1 and TexPath == 1):(tm = Bitmaptexture filename:(BasePath + mat.name + ".dds"))
 										(TexFormat == 1 and TexPath == 2):(tm = Bitmaptexture filename:(BasePath + "Textures/" + mat.name + ".dds"))
@@ -9213,7 +9223,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									mat = MultiMat.materialList[m]
 									mat.name = TexName_array [m] as string
 									mat.showinviewport = true
-	-- 								mat.diffuse = (MatColor_array[m] * 255)
+	 								-- mat.diffuse = (MatColor_array[m] * 255)
 									case of (
 										(TexFormat == 1 and TexPath == 1):(tm = Bitmaptexture filename:(BasePath + mat.name + ".dds"))
 										(TexFormat == 1 and TexPath == 2):(tm = Bitmaptexture filename:(BasePath + "Textures/" + mat.name + ".dds"))
@@ -9253,7 +9263,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 						(VerNum == 42 or VerNum == 45 or VerNum == 46):(
 							-- Version 42: Marvel's Guardians of the Galaxy [PC]
 							-- Version 45: Batman: The Enemy Within [PC / PS4], Minecraft: Story Mode Season 2 [PC / PS4]
-							-- Version 46: Batman: The Telltale Series [PC, 2017 update], Minecraft: Story Mode – Season Two [PC / PS4, Miscellaneous], The Walking Dead Collection [PS4]
+							-- Version 46: Batman: The Telltale Series [PC, 2017 update], Minecraft: Story Mode ï¿½ Season Two [PC / PS4, Miscellaneous], The Walking Dead Collection [PS4]
 							struct Bone_Info_Struct (Bone1, Bone2, Bone3, Bone4)
 							struct Weight_Info_Struct (Weight1, Weight2, Weight3, Weight4)
 							struct Weight_data (BoneIDs, weights)
@@ -10422,7 +10432,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									mat = MultiMat.materialList[m]
 									mat.name = TexName_array [m] as string
 									mat.showinviewport = true
-	-- 								mat.diffuse = (MatColor_array[m] * 255)
+	 								-- mat.diffuse = (MatColor_array[m] * 255)
 									case of (
 										(TexFormat == 1 and TexPath == 1):(tm = Bitmaptexture filename:(BasePath + mat.name + ".dds"))
 										(TexFormat == 1 and TexPath == 2):(tm = Bitmaptexture filename:(BasePath + "Textures/" + mat.name + ".dds"))
@@ -10456,7 +10466,9 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 							fclose f
 						)
 						(VerNum == 55):(
-							-- Version 55: The Walking Dead: The Final Season, The Walking Dead: The Telltale Definitive Series
+							-- Version 55: The Walking Dead: The Final Season [PC], 
+							-- The Walking Dead: The Telltale Definitive Series [PC], 
+							-- Sam & Max: Save the World / Beyond Time and Space Remastered [PC]
 							struct Bone_Info_Struct (Bone1, Bone2, Bone3, Bone4)
 							struct Weight_Info_Struct (Weight1, Weight2, Weight3, Weight4)
 							struct Weight_data (BoneIDs, weights)
@@ -11008,38 +11020,41 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 							fseek f Sect9Size #seek_set
 
 							printDebug ("Section 10 (Model Clamps) start = " + (ftell f as string))
-							MeshUnk1 = readlong f #unsigned
-							MeshFlag1 = readbyte f #unsigned
-							MeshFlag2 = readbyte f #unsigned
-							MeshFlag3 = readbyte f #unsigned
-							MeshFlag4 = readbyte f #unsigned
-							MeshXMin = readfloat f; MeshYMin = readfloat f; MeshZMin = readfloat f
-							MeshXMax = readfloat f; MeshYMax = readfloat f; MeshZMax = readfloat f
-							MeshXMult = MeshXMax - MeshXMin; MeshYMult = MeshYMax - MeshYMin; MeshZMult = MeshZMax - MeshZMin
+							for x = 1 to 1 do (
+								MeshUnk1 = readlong f #unsigned
+								MeshFlag1 = readbyte f #unsigned
+								MeshFlag2 = readbyte f #unsigned
+								MeshFlag3 = readbyte f #unsigned
+								MeshFlag4 = readbyte f #unsigned
+								MeshXMin = readfloat f; MeshYMin = readfloat f; MeshZMin = readfloat f
+								MeshXMax = readfloat f; MeshYMax = readfloat f; MeshZMax = readfloat f
+								MeshXMult = MeshXMax - MeshXMin; MeshYMult = MeshYMax - MeshYMin; MeshZMult = MeshZMax - MeshZMin
 
-							MeshSubSectLength = readlong f #unsigned
-							MeshFloatA = readfloat f
-							MeshFloatB = readfloat f
-							MeshFloatC = readfloat f
-							MeshFloatD = readfloat f
-							MeshUnk3 = readlong f #unsigned
-							MeshFloat1 = readfloat f
-							MeshFloat2 = readfloat f
-							MeshFloat3 = readfloat f
-							MeshFloatX = readfloat f
-							MeshFloatY = readfloat f
-							MeshFloatZ = readfloat f
-							MeshFloat4 = readfloat f
-							MeshFloat5 = readfloat f
-							MeshFloat6 = readfloat f
-							MeshUnk4 = readlong f #unsigned
-							MeshHash2 = readlong f #unsigned
-							MeshHash1 = readlong f #unsigned
-							MeshOrient = "Q"
-							if MeshFloatX != 0x00 do (MeshOrient = "X")
-							if MeshFloatY != 0x00 do (MeshOrient = "Y")
-							if MeshFloatZ != 0x00 do (MeshOrient = "Z")
-							printDebug ("Flags = 0x" + bit.intAsHex(MeshFlag1) as string + ", 0x" + bit.intAsHex(MeshFlag2) as string + ", 0x" + bit.intAsHex(MeshFlag3) as string + ", 0x" + bit.intAsHex(MeshFlag4) as string + ", Orientation = " + MeshOrient as string)
+								MeshSubSectLength = readlong f #unsigned
+								MeshFloatA = readfloat f
+								MeshFloatB = readfloat f
+								MeshFloatC = readfloat f
+								MeshFloatD = readfloat f
+								MeshUnk3 = readlong f #unsigned
+								MeshFloat1 = readfloat f
+								MeshFloat2 = readfloat f
+								MeshFloat3 = readfloat f
+								MeshFloatX = readfloat f
+								MeshFloatY = readfloat f
+								MeshFloatZ = readfloat f
+								MeshFloat4 = readfloat f
+								MeshFloat5 = readfloat f
+								MeshFloat6 = readfloat f
+								MeshUnk4 = readlong f #unsigned
+								MeshHash2 = readlong f #unsigned
+								MeshHash1 = readlong f #unsigned
+								MeshOrient = "Q"
+								if MeshFloatX != 0x00 do (MeshOrient = "X")
+								if MeshFloatY != 0x00 do (MeshOrient = "Y")
+								if MeshFloatZ != 0x00 do (MeshOrient = "Z")
+								printDebug ("Flags = 0x" + bit.intAsHex(MeshFlag1) as string + ", 0x" + bit.intAsHex(MeshFlag2) as string + ", 0x" + bit.intAsHex(MeshFlag3) as string + ", 0x" + bit.intAsHex(MeshFlag4) as string + ", Orientation = " + MeshOrient as string)
+							)	
+							
 							printDebug ("Section 11 start = " + (ftell f as string))
 
 							VertCount = readlong f #unsigned
@@ -11372,14 +11387,14 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 												nq3 = readbyte f as float / 127
 											)
 										)
-				-- 						(TangentsFmt == 26):(
-				-- 							for x = 1 to VertCount do (
-				-- 								nx3 = readshort f as float / 32767
-				-- 								ny3 = readshort f as float / 32767
-				-- 								nz3 = readshort f as float / 32767
-				-- 								nq3 = readshort f as float / 32767
-				-- 							)
-				-- 						)
+										--(TangentsFmt == 26):(
+				 						--	for x = 1 to VertCount do (
+				 						--		nx3 = readshort f as float / 32767
+				 						--		ny3 = readshort f as float / 32767
+				 						--		nz3 = readshort f as float / 32767
+				 						--		nq3 = readshort f as float / 32767
+				 						--	)
+				 						--)
 									)
 								)
 								if HasBinormals > 0 do (
@@ -11394,14 +11409,14 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 												nq2 = readbyte f as float / 127
 											)
 										)
-				-- 						(BinormalsFmt == 26):(
-				-- 							for x = 1 to VertCount do (
-				-- 								nx2 = readshort f as float / 32767
-				-- 								ny2 = readshort f as float / 32767
-				-- 								nz2 = readshort f as float / 32767
-				-- 								nq2 = readshort f as float / 32767
-				-- 							)
-				-- 						)
+				 						--(BinormalsFmt == 26):(
+				 						--	for x = 1 to VertCount do (
+				 						--		nx2 = readshort f as float / 32767
+				 						--		ny2 = readshort f as float / 32767
+				 						--		nz2 = readshort f as float / 32767
+				 						--		nq2 = readshort f as float / 32767
+				 						--	)
+				 						--)
 									)
 								)
 								if HasUV5 > 0 do (
@@ -11729,7 +11744,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									mat = MultiMat.materialList[m]
 									mat.name = TexName_array [m] as string
 									mat.showinviewport = true
-	-- 								mat.diffuse = (MatColor_array[m] * 255)
+	 								-- mat.diffuse = (MatColor_array[m] * 255)
 									case of (
 										(TexFormat == 1 and TexPath == 1):(tm = Bitmaptexture filename:(BasePath + mat.name + ".dds"))
 										(TexFormat == 1 and TexPath == 2):(tm = Bitmaptexture filename:(BasePath + "Textures/" + mat.name + ".dds"))
