@@ -203,11 +203,9 @@ for x = 1 to 1 do (
 	enableSceneRedraw()
 	print "Ready to import!"
 	print ("Bone hash total: " + BoneHash_array.count as string)
-	print ("Texture hash total: " + TexHash_array.count as string)
-)
+	print ("Texture hash total: " + TexHash_array.count as string))
 
-rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" width:655 height:330
-(
+rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" width:655 height:330(
 	groupBox OptionsBox "Options" pos:[8,55] width:370 height:195
 	button btnImport "Import Model" pos:[8,8] width:370 height:40	
 	label lblUVLayers "UV Layers:" pos:[17,70]
@@ -934,6 +932,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 				-- "Version 0" games use the ASCII hex code for "0" or "1" to indicate unrigged or rigged models, in the place where the version number would be in later titles. Thankfully no other games use these two numbers!
 				print ("Importing " + D3DName + " (Version " + VerNum as string + ")...")
 
+				-- Import/Skip skeleton
 				if q == 1 do (
 					bname = getOpenFileName \ 
 					caption:"Import Telltale Games SKL file (hit Cancel for none)" \
@@ -4938,7 +4937,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												exit()
+												-- exit()
 											)
 										)
 										append ProperBoneID_array BoneName
