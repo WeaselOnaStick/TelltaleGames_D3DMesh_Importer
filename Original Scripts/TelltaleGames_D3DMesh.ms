@@ -1033,7 +1033,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									for y = 1 to BoneHash_array.count do (
 										if BoneHash1 == BoneHash_array[y].BoneHash1 and BoneHash2 == BoneHash_array[y].BoneHash2 do (
 											BoneName = BoneHash_array[y].BoneString
-											--exit()
+											-- exit()
 										)
 									)
 									append BoneName_array BoneName
@@ -2838,7 +2838,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												--exit()
+												-- exit()
 											)
 										)
 										append ProperBoneID_array BoneName
@@ -5214,7 +5214,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									for y = 1 to TexHash_array.count do (
 										if TexHash1 == TexHash_array [y].TexHash1 and TexHash2 == TexHash_array [y].TexHash2 do (
 											TexName = TexHash_array [y].TexString
-											exit()
+											-- exit()
 										)
 									)
 									case m of (
@@ -5732,7 +5732,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												exit()
+												-- exit()
 											)
 										)
 										append ProperBoneID_array BoneName
@@ -6159,13 +6159,13 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 												for y = 1 to TexHash_array.count do (
 													if TexHash1 == TexHash_array [y].TexHash1 and TexHash2 == TexHash_array [y].TexHash2 do (
 														TexName = TexHash_array [y].TexString
-														exit()
+														-- exit()
 													)
 												)
 												if (TypeHash1 == "Diffuse" and TypeHash2 == "Map") or (TypeHash1 == "Diffuse LOD" and TypeHash2 == "Map") do (TexDifName = TexName)
 												print (TypeHash1 + " " + TypeHash2 as string + ": " + TexName)
 											)
-											exit() -- We got what we came here for, time to get out.
+											-- exit() -- We got what we came here for, time to get out.
 										)
 										(MatSectHash1 == "e2ba743e" and MatSectHash2 == "952f9338"):(
 											for y = 1 to MatSectCount do (
@@ -6310,7 +6310,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									if MatHash1 == MatHash_array [y].MatHash1 and MatHash2 == MatHash_array [y].MatHash2 do (
 										TexName = MatHash_array [y].TexDifName
 										append TexName_array TexName
-										exit()
+										-- exit()
 									)
 								)
 							)
@@ -6770,7 +6770,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 											for z = 1 to BoneHash_array.count do (
 												if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 													BoneName = BoneHash_array [z].BoneString
-													exit()
+													-- exit()
 												)
 											)
 											append ProperBoneID_array BoneName
@@ -7186,13 +7186,13 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 												for y = 1 to TexHash_array.count do (
 													if TexHash1 == TexHash_array [y].TexHash1 and TexHash2 == TexHash_array [y].TexHash2 do (
 														TexName = TexHash_array [y].TexString
-														exit()
+														-- exit()
 													)
 												)
 												if (TypeHash1 == "Diffuse" and TypeHash2 == "Map") or (TypeHash1 == "Diffuse LOD" and TypeHash2 == "Map") do (TexDifName = TexName)
 												print (TypeHash1 + " " + TypeHash2 as string + ": " + TexName)
 											)
-											exit() -- We got what we came here for, time to get out.
+											-- exit() -- We got what we came here for, time to get out.
 										)
 										(MatSectHash1 == "e2ba743e" and MatSectHash2 == "952f9338"):(
 											for y = 1 to MatSectCount do (
@@ -7391,7 +7391,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									if MatHash1 == MatHash_array [y].MatHash1 and MatHash2 == MatHash_array [y].MatHash2 do (
 										TexName = MatHash_array [y].TexDifName
 										append TexName_array TexName
-										exit()
+										-- exit()
 									)
 								)
 							)
@@ -7956,7 +7956,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 											for z = 1 to BoneHash_array.count do (
 												if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 													BoneName = BoneHash_array [z].BoneString
-													exit()
+													-- exit()
 												)
 											)
 											append ProperBoneID_array BoneName
@@ -8372,13 +8372,13 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 												for y = 1 to TexHash_array.count do (
 													if TexHash1 == TexHash_array [y].TexHash1 and TexHash2 == TexHash_array [y].TexHash2 do (
 														TexName = TexHash_array [y].TexString
-														exit()
+														-- exit()
 													)
 												)
 												if (TypeHash1 == "Diffuse" and TypeHash2 == "Map") or (TypeHash1 == "Diffuse LOD" and TypeHash2 == "Map") do (TexDifName = TexName)
 												print (TypeHash1 + " " + TypeHash2 as string + ": " + TexName)
 											)
-											exit() -- We got what we came here for, time to get out.
+											-- exit() -- We got what we came here for, time to get out.
 										)
 										(MatSectHash1 == "e2ba743e" and MatSectHash2 == "952f9338"):(
 											for y = 1 to MatSectCount do (
@@ -8453,7 +8453,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 								Head3ASubBSize = (readlong f #unsigned) - 4
 								if Head3ASubBSize == 0x04 do (
 									fseek f Header3ASize #seek_set
-									exit()
+									-- exit()
 								)
 
 								Poly2Total = readlong f #unsigned
@@ -8575,7 +8575,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									if MatHash1 == MatHash_array [y].MatHash1 and MatHash2 == MatHash_array [y].MatHash2 do (
 										TexName = MatHash_array [y].TexDifName
 										append TexName_array TexName
-										exit()
+										-- exit()
 									)
 								)
 							)
@@ -9157,7 +9157,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 											for z = 1 to BoneHash_array.count do (
 												if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 													BoneName = BoneHash_array [z].BoneString
-													exit()
+													-- exit()
 												)
 											)
 											append ProperBoneID_array BoneName
@@ -9579,13 +9579,13 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 												for y = 1 to TexHash_array.count do (
 													if TexHash1 == TexHash_array [y].TexHash1 and TexHash2 == TexHash_array [y].TexHash2 do (
 														TexName = TexHash_array [y].TexString
-														exit()
+														-- exit()
 													)
 												)
 												if (TypeHash1 == "Diffuse" and TypeHash2 == "Map") or (TypeHash1 == "Diffuse LOD" and TypeHash2 == "Map") do (TexDifName = TexName)
 												print (TypeHash1 + " " + TypeHash2 as string + ": " + TexName)
 											)
-											exit() -- We got what we came here for, time to get out.
+											-- exit() -- We got what we came here for, time to get out.
 										)
 										(MatSectHash1 == "e2ba743e" and MatSectHash2 == "952f9338"):(
 											for y = 1 to MatSectCount do (
@@ -9658,7 +9658,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 								Head3ASubBSize = (readlong f #unsigned) - 4
 								if Head3ASubBSize == 0x04 do (
 									fseek f Header3ASize #seek_set
-									exit()
+									-- exit()
 								)
 
 								Poly2Total = readlong f #unsigned
@@ -9778,7 +9778,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									if MatHash1 == MatHash_array [y].MatHash1 and MatHash2 == MatHash_array [y].MatHash2 do (
 										TexName = MatHash_array [y].TexDifName
 										append TexName_array TexName
-										exit()
+										-- exit()
 									)
 								)
 							)
@@ -10368,7 +10368,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												exit()
+												-- exit()
 											)
 										)
 										append ProperBoneID_array BoneName
@@ -10786,13 +10786,13 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 												for y = 1 to TexHash_array.count do (
 													if TexHash1 == TexHash_array [y].TexHash1 and TexHash2 == TexHash_array [y].TexHash2 do (
 														TexName = TexHash_array [y].TexString
-														exit()
+														-- exit()
 													)
 												)
 												if (TypeHash1 == "Diffuse" and TypeHash2 == "Map") or (TypeHash1 == "Diffuse LOD" and TypeHash2 == "Map") do (TexDifName = TexName)
 												print (TypeHash1 + " " + TypeHash2 as string + ": " + TexName)
 											)
-											exit() -- We got what we came here for, time to get out.
+											-- exit() -- We got what we came here for, time to get out.
 										)
 										(MatSectHash1 == "e2ba743e" and MatSectHash2 == "952f9338"):(
 											for y = 1 to MatSectCount do (
@@ -10968,7 +10968,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 									if MatHash1 == MatHash_array [y].MatHash1 and MatHash2 == MatHash_array [y].MatHash2 do (
 										TexName = MatHash_array [y].TexDifName
 										append TexName_array TexName
-										exit()
+										-- exit()
 									)
 								)
 							)
@@ -11680,7 +11680,7 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 										for z = 1 to BoneHash_array.count do (
 											if BoneHash1 == BoneHash_array [z].BoneHash1 and BoneHash2 == BoneHash_array [z].BoneHash2 do (
 												BoneName = BoneHash_array [z].BoneString
-												exit()
+												-- exit()
 											)
 										)
 										append ProperBoneID_array BoneName
