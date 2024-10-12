@@ -11,15 +11,71 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from . import auto_load
+import bpy
+import os
+from .import_d3dmesh import import_d3dmesh
+from bpy.props import StringProperty
+from bpy_extras.io_utils import ImportHelper
 
-auto_load.init()
+class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
+    bl_idname = "import.d3dmesh"
+    bl_label = "Import D3DMesh"
+    # WOAS: I hate how blender api online docs don't have ImportHelper templates or any explanation 
+    # so you have to dig through templates built into blender's text editor
 
+    directory: bpy.props.StringProperty(subtype='FILE_PATH', options={'SKIP_SAVE', 'HIDDEN'})
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'})
+
+    filename_ext = ".d3dmesh"
+
+    filter_glob : bpy.props.StringProperty(
+        default="*.d3dmesh",
+        options={'HIDDEN'},
+        maxlen=255,  
+    )
+
+    parse_skel : bpy.props.BoolProperty(
+        name="Also Import Skeleton Files (WIP)",
+        default=False,
+        description=""
+    )
+
+    def execute(self, context):
+        if not self.directory:
+            return {'CANCELLED'}
+        
+        for f in self.files:
+            if not f.name.endswith(".d3dmesh"):
+                continue
+            fpath = os.path.join(self.directory, f.name)
+            print(f"Processing {fpath}...")
+            import_d3dmesh(fpath)
+
+        
+        return {"FINISHED"}
+    
+    
+    def invoke(self, context, event):
+        return self.invoke_popup(context)
+    
+    
+    def draw(self, context):
+        layout = self.layout
+        box = layout.box()
+        box.label(text="Supports selecting multiple files", icon='MOD_ARRAY')
+        parse_skel_button = layout.row()
+        parse_skel_button.prop(self, "parse_skel")
+        parse_skel_button.enabled = False
+
+
+def menu_func_import(self, context):
+    self.layout.operator(D3DMesh_ImportOperator.bl_idname, text="D3DMesh (.d3dmesh)")
 
 def register():
-    print("Hello, World\n   -Weasel")
-    auto_load.register()
+    bpy.utils.register_class(D3DMesh_ImportOperator)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 
 def unregister():
-    auto_load.unregister()
+    bpy.utils.unregister_class(D3DMesh_ImportOperator)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
