@@ -222,7 +222,8 @@ rollout TelltaleImporter "Telltale Games 'Almost All-In-One' Model Importer" wid
 	dropDownList lstEarlyGameFix width:350 pos:[17,165] 
     items:#(
         "Texas Hold'em / Bone / CSI 3/4 / Sam and Max S1/S2 (Ep. 1/2)",
-        "Sam and Max Season 2 (Ep. 3/4)","Sam and Max Season 2 (Ep. 5 - What's New, Beelzebub?)",
+        "Sam and Max Season 2 (Ep. 3/4)",
+		"Sam and Max Season 2 (Ep. 5 - What's New, Beelzebub?)",
         "Strong Bad's CG4AP (Ep. 1 - Homestar Ruiner)",
         "Strong Bad's CG4AP (Ep. 2 - Strong Badia the Free)",
         "Strong Bad's CG4AP (Ep. 3 - Baddest of the Bands)",
