@@ -1,7 +1,7 @@
 from .wbr import WBR
 
-def import_d3dmesh(filepath, VerboseLevel = 1):
-    f = open(r"C:\Users\woas\Downloads\d3d\input\obj_carTaxiA.d3dmesh", 'rb')
+def import_d3dmesh(Filepath, Verbose, UV_layers='MERGE', EarlyGameFix=0):
+    f = open(Filepath, 'rb')
     f = WBR(f)
 
     header = f.readLong()
@@ -13,8 +13,8 @@ def import_d3dmesh(filepath, VerboseLevel = 1):
     ParamCount = f.readLong()
     print(f"ParamCount = {ParamCount}")
     for x in range(ParamCount):
-        if VerboseLevel > 2:
-            print(f"Unknown param {f.read(0x0C).decode('ansi')}")
+        if Verbose:
+            print(f"Unknown param {f.read(0x0C)}")
         else:
             f.seek_rel(0x0C)
     D3DNameHeaderLength = f.readLong()
