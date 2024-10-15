@@ -72,7 +72,6 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
     )
 
     def execute(self, context):
-        print(f"{context}")
         if not self.directory:
             return {'CANCELLED'}      
         
@@ -86,7 +85,7 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
                     self.report({'WARNING'},f".skl files not supported yet")
 
 
-        
+        self.report({'INFO'}, "Finished!")
         return {"FINISHED"}
     
     
