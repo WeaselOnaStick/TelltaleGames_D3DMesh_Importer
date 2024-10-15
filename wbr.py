@@ -20,10 +20,18 @@ class WBR(BufferedReader):
   def readLongSigned(self):
     """Shorthand for readLong(signed=True)"""
     return self.readLong(True)
-
-  def readByte(self, signed = False):
+  
+  def readShort(self, signed = False):
     """Read short int"""
+    return struct.unpack('h' if signed else 'H', self.read(2))[0]
+
+  def readByte(self):
+    """Read single byte as int"""
     return int.from_bytes(self.read(1))
+  
+  def readBytes(self, n : int):
+    """Read n bytes as ints"""
+    return (int.from_bytes(self.read(1)) for i in range(n))
 
   def readString(self, n : int):
     return ''.join([x.decode() for x in struct.unpack('c'*n, self.read(n))])

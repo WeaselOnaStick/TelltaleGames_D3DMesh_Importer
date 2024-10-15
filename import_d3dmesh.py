@@ -1,12 +1,43 @@
 from .wbr import WBR
+from .bpy_build import buildModel
+from .bpy_build import buildSkeleton
+import bpy
 
-def import_d3dmesh(Filepath, Verbose=False, UV_layers='MERGE', EarlyGameFix=0):
-    f = open(Filepath, 'rb')
+def import_d3dmesh(filepath,
+                   verbose=False,
+                   uv_layers='MERGE',
+                   early_game_fix=0,
+                   parse_lods = False,
+                   ) -> list[bpy.types.Object]:
+    f = open(filepath, 'rb')
     f = WBR(f)
+    res = []
 
     def printifv(x):
-        if Verbose:
-            print(x)
+        if verbose: print(x)
+
+    Face_array = []
+    FaceB_array = []
+    Vert_array = []
+    Normal_array = []
+    UV_array = []
+    UV2_array = []
+    UV3_array = []
+    UV4_array = []
+    UV5_array = []
+    UV6_array = []
+    B1_array = []
+    W1_array = []
+    Color_array = []
+    Alpha_array = []
+    FixedBoneID_array = []
+    BoneIDOffset_array = []
+    PolyStruct_array = []
+    MatHash_array = []
+    TexName_array = []
+    FacePointCount = 0
+    FacePointCountB = 0
+
 
     header = f.readLong()
     HeaderMagic = header.to_bytes(4).decode('ascii')
@@ -66,7 +97,7 @@ def import_d3dmesh(Filepath, Verbose=False, UV_layers='MERGE', EarlyGameFix=0):
         TexDifName = "undefined"
         printifv(f"Material Parameter Count = {MatParamCount}")
         for mp in range(MatParamCount):
-            #TODO parse Material Params
+            #TODO parse all MatSectHash
             MatSectHash2 = f"{f.readLong():x}"
             MatSectHash1 = f"{f.readLong():x}"
             MatSectCount = f.readLong()
@@ -98,6 +129,112 @@ def import_d3dmesh(Filepath, Verbose=False, UV_layers='MERGE', EarlyGameFix=0):
     printifv(f"Section 3 (LOD info) start @{f.tell()}, Count = {Sect3Count}")
 
     #TODO Parse LOD Info
+    for lodc in range(Sect3Count):
+        Sect3AEnd = f.tell() + f.readLong()
+        PolyTotal = f.readLong()
+        printifv(f"LOD #{lodc+1} start @{f.tell()-0x4*2}, Count = {PolyTotal}")
+        for polt in range(PolyTotal):
+            BoundingMinX = f.readFloat(); BoundingMinY = f.readFloat(); BoundingMinZ = f.readFloat()
+            BoundingMaxX = f.readFloat(); BoundingMaxY = f.readFloat(); BoundingMaxZ = f.readFloat()
+            HeaderLength = f.readLong()
+            unknown1 = f.readLong()
+            UnkFloat2 = f.readFloat()
+            UnkFloat3 = f.readFloat()
+            UnkFloat4 = f.readFloat()
+            unknown2 = f.readLong()
+            VertexMin = f.readLong() + 1
+            VertexMax = f.readLong() + 1
+            VertexStart = f.readLong()
+            FacePointStart = f.readLong()
+            PolygonStart = int(FacePointStart / 3) + 1
+            PolygonCount = f.readLong()
+            FacePointCount = f.readLong()
+            HeaderLength2 = f.readLong()
+            if HeaderLength2 == 0x10:
+                unknown2A = f.readLong()
+                unknown2B = f.readLong()
+            unknown3 = f.readLong()
+            MatNum = f.readLong() + 1
+            unknown4 = f.readLong() + 1
+            if polt == 1 or (polt > 1 and parse_lods):
+                PolyStruct_array.append({
+                        "VertexStart" : VertexStart,
+                        "VertexMin" : VertexMin,
+                        "VertexMax" : VertexMax,
+                        "PolygonStart" : PolygonStart,
+                        "PolygonCount" : PolygonCount,
+                        "FacePointCount" : FacePointCount,
+                        "MatNum" : MatNum,
+                        "LODNum" : polt,
+                        }
+                )
+            printifv(f"Bounding Box = {BoundingMinX, BoundingMinY, BoundingMinZ}|{BoundingMaxX, BoundingMaxY, BoundingMaxZ}")
+            printifv(f"VertStart @ {VertexStart}, Vertminmax = {VertexMin,VertexMax}, Polystart @{PolygonStart}, PolyCount = {PolygonCount}, FacePointCount = {FacePointCount}, Matnum {MatNum}, Unknowns = {unknown1, unknown2, unknown3, unknown4}")
+        f.seek_abs(Sect3AEnd)
+
+        printifv(f"Section 3B start @{f.tell()}")
+        Sect3BEnd = f.tell() + f.readLong()
+        Poly2Total = f.readLong()
+        for polt2 in range(Poly2Total):
+            BoundingMinX = f.readFloat(); BoundingMinY = f.readFloat(); BoundingMinZ = f.readFloat()
+            BoundingMaxX = f.readFloat(); BoundingMaxY = f.readFloat(); BoundingMaxZ = f.readFloat()
+            HeaderLength = f.readLong()
+            unknown1 = f.readLong()
+            UnkFloat2 = f.readFloat()
+            UnkFloat3 = f.readFloat()
+            UnkFloat4 = f.readFloat()
+            unknown2 = f.readLong()
+            VertexMin = f.readLong() + 1
+            VertexMax = f.readLong() + 1
+            VertexStart = f.readLong()
+            FacePointStart = f.readLong()
+            PolygonStart = int(FacePointStart / 3) + 1
+            PolygonCount = f.readLong()
+            FacePointCount = f.readLong()
+            HeaderLength2 = f.readLong()
+            if HeaderLength2 == 0x10:
+                unknown2A = f.readLong()
+                unknown2B = f.readLong()
+            unknown3 = f.readLong()
+            MatNum = f.readLong() + 1
+            unknown4 = f.readLong() + 1
+            
+            printifv(f"Bounding Box = {BoundingMinX, BoundingMinY, BoundingMinZ}|{BoundingMaxX, BoundingMaxY, BoundingMaxZ}")
+            printifv(f"VertStart @ {VertexStart}, Vertminmax = {VertexMin,VertexMax}, Polystart @{PolygonStart}, PolyCount = {PolygonCount}, FacePointCount = {FacePointCount}, Matnum {MatNum}, Unknowns = {unknown1, unknown2, unknown3, unknown4}")
+
+        f.seek_abs(Sect3BEnd)
+
+        printifv(f"Section 3C start @{f.tell()}")
+        unknown1 = f.readLong()
+        unknown2 = f.readLong()
+        BoundingMinX = f.readFloat(); BoundingMinY = f.readFloat(); BoundingMinZ = f.readFloat()
+        BoundingMaxX = f.readFloat(); BoundingMaxY = f.readFloat(); BoundingMaxZ = f.readFloat()
+        unknown3 = (f.readLong()) - 4
+        UnkFloat1 = f.readFloat()
+        UnkFloat2 = f.readFloat()
+        UnkFloat3 = f.readFloat()
+        UnkFloat4 = f.readFloat()
+        blank1 = f.readLong()
+        blank2 = f.readLong()
+        unknown4 = f.readLong()
+        unknown5 = f.readLong()
+        blank3 = f.readLong()
+        unknown6 = f.readLong()
+        unknown7 = f.readLong()
+        unknown8 = f.readLong()
+        unknown9 = f.readLong()
+        unknown10 = f.readLong()
+
+        printifv(f"Bounding Box = {BoundingMinX, BoundingMinY, BoundingMinZ}|{BoundingMaxX, BoundingMaxY, BoundingMaxZ}")
+        #mostly unknowns here, skipping
+
+        IDHeaderLen = f.readLong() - 4
+        BoneIDOffset_array.append(f.tell())
+        BoneIDCount = f.readLong()
+        print(f"Section 3D (Bone IDs) start @{f.tell()}, Count = {BoneIDCount}")
+        for bid in range(BoneIDCount):
+            BoneHash2, BoneHash1 = f.readLongs(2)
+
 
     f.seek_abs(Sect3End)
     Sect4End = f.tell() + f.readLong()
@@ -223,84 +360,211 @@ def import_d3dmesh(Filepath, Verbose=False, UV_layers='MERGE', EarlyGameFix=0):
         UVStarts[UVLayer] = [UVXStart, UVYStart]
         printifv(f"UV Layer #{UVLayer+1} UV Mul = {UVMults[UVLayer]}, UV Start = {UVStarts[UVLayer]}")
 
-    if (VertCount != 0):
-        printifv(f"Section 11C start @{f.tell()}")
-        HasVertex       = False;    VertexFmt = 0
-        HasNormals      = False;    NormalsFmt = 0
-        HasTangents     = False;    TangentsFmt = 0
-        HasBinormals    = False;    BinormalsFmt = 0
-        HasWeights      = False;    WeightsFmt = 0
-        HasBones        = False;    BonesFmt = 0
-        HasColors       = False;    ColorsFmt = 0
-        HasColors2      = False;    Colors2Fmt = 0
-        HasUV1          = False;    UV1Fmt = 0
-        HasUV2          = False;    UV2Fmt = 0
-        HasUV3          = False;    UV3Fmt = 0
-        HasUV4          = False;    UV4Fmt = 0
-        HasUV5          = False;    UV5Fmt = 0
-        HasUV6          = False;    UV6Fmt = 0
+    if (VertCount == 0):
+        return
 
-        match VertFlags:
-            case 0x00 | 0x01 | 0x03 | 0x05 | 0x09 | 0x21: printifv(f"Unimportant VertexFlags")
-            case 0x31:
-                VertBuffUnk1 = f.readLong()
-                VertBuffUnk2 = f.readLong()
-                VertBuffUnk3 = f.readLong()
-                VertBuffUnk4 = f.readLong()
-                VertBuffUnk5 = f.readLong()
-                VertBuffUnk6 = f.readLong()
-                VertBuffUnk7 = f.readLong()
-                VertBuffUnk8 = f.readLong()
-                VertBuffUnk9 = f.readLong()
-                VertParamStart = f.tell() + f.readLong()
-                VertBuffSize = f.readLong()
-                VertStart = f.tell()
-                f.seek_abs(VertParamStart)
-            case _: printifv("Unknown vertex flags")
-        
-        printifv(f"Section 12 (Vertex/Face Buffer Info) start @{f.tell()}")
+    printifv(f"Section 11C start @{f.tell()}")
+    HasVertex       = False;    VertexFmt = 0
+    HasNormals      = False;    NormalsFmt = 0
+    HasTangents     = False;    TangentsFmt = 0
+    HasBinormals    = False;    BinormalsFmt = 0
+    HasWeights      = False;    WeightsFmt = 0
+    HasBones        = False;    BonesFmt = 0
+    HasColors       = False;    ColorsFmt = 0
+    HasColors2      = False;    Colors2Fmt = 0
+    HasUV1          = False;    UV1Fmt = 0
+    HasUV2          = False;    UV2Fmt = 0
+    HasUV3          = False;    UV3Fmt = 0
+    HasUV4          = False;    UV4Fmt = 0
+    HasUV5          = False;    UV5Fmt = 0
+    HasUV6          = False;    UV6Fmt = 0
 
+    match VertFlags:
+        case 0x00 | 0x01 | 0x03 | 0x05 | 0x09 | 0x21: printifv(f"Unimportant VertexFlags")
+        case 0x31:
+            VertBuffUnk1 = f.readLong()
+            VertBuffUnk2 = f.readLong()
+            VertBuffUnk3 = f.readLong()
+            VertBuffUnk4 = f.readLong()
+            VertBuffUnk5 = f.readLong()
+            VertBuffUnk6 = f.readLong()
+            VertBuffUnk7 = f.readLong()
+            VertBuffUnk8 = f.readLong()
+            VertBuffUnk9 = f.readLong()
+            VertParamStart = f.tell() + f.readLong()
+            VertBuffSize = f.readLong()
+            VertStart = f.tell()
+            f.seek_abs(VertParamStart)
+        case _: printifv("Unknown vertex flags")
     
-        BuffUnk1 = f.readLong()
-        BuffUnk2 = f.readLong()
-        FaceBufferCount = f.readLong()
-        BufferCount1 = f.readLong()
-        BufferCount2 = f.readLong()
+    printifv(f"Section 12 (Vertex/Face Buffer Info) start @{f.tell()}")
 
-        for buf in range(BufferCount1):
-            VertType = f.readLong() + 1
-            VertFormat = f.readLong() + 1
-            VertLayer = f.readLong() + 1
-            VertBuffNum = f.readLong() + 1
-            VertOffset = f.readLong() + 1
-            printifv(f"Vertex Type = {VertType}, Format = {VertFormat},  Layer = {VertLayer}, Buffer Number = {VertBuffNum}, Offset = {VertOffset}")
-            match (VertType, VertLayer):
-                case (1,1): HasVertex = VertBuffNum; VertexFmt = VertFormat
-                case (4,1): HasWeights = VertBuffNum; WeightsFmt = VertFormat
-                case (5,1): HasBones = VertBuffNum; BonesFmt = VertFormat
-                case (2,1): HasNormals = VertBuffNum; NormalsFmt = VertFormat
-                case (3,1): HasTangents = VertBuffNum; TangentsFmt = VertFormat
-                case (2,2): HasBinormals = VertBuffNum; BinormalsFmt = VertFormat
-                case (7,5): HasUV5 = VertBuffNum; UV5Fmt = VertFormat
-                case (7,6): HasUV6 = VertBuffNum; UV6Fmt = VertFormat
-                case (6,1): HasColors = VertBuffNum; ColorsFmt = VertFormat
-                case (6,2): HasColors2 = VertBuffNum; Colors2Fmt = VertFormat
-                case (7,1): HasUV1 = VertBuffNum; UV1Fmt = VertFormat
-                case (7,2): HasUV2 = VertBuffNum; UV2Fmt = VertFormat
-                case (7,3): HasUV3 = VertBuffNum; UV3Fmt = VertFormat
-                case (7,4): HasUV4 = VertBuffNum; UV4Fmt = VertFormat
-                case _: print("Unknown vertex buffer combo")
+
+    BuffUnk1 = f.readLong()
+    BuffUnk2 = f.readLong()
+    FaceBufferCount = f.readLong()
+    BufferCount1 = f.readLong()
+    BufferCount2 = f.readLong()
+
+    for buf in range(BufferCount1):
+        VertType = f.readLong() + 1
+        VertFormat = f.readLong() + 1
+        VertLayer = f.readLong() + 1
+        VertBuffNum = f.readLong() + 1
+        VertOffset = f.readLong() + 1
+        printifv(f"Vertex Type = {VertType}, Format = {VertFormat},  Layer = {VertLayer}, Buffer Number = {VertBuffNum}, Offset = {VertOffset}")
+        match (VertType, VertLayer):
+            case (1,1): HasVertex = VertBuffNum; VertexFmt = VertFormat
+            case (4,1): HasWeights = VertBuffNum; WeightsFmt = VertFormat
+            case (5,1): HasBones = VertBuffNum; BonesFmt = VertFormat
+            case (2,1): HasNormals = VertBuffNum; NormalsFmt = VertFormat
+            case (3,1): HasTangents = VertBuffNum; TangentsFmt = VertFormat
+            case (2,2): HasBinormals = VertBuffNum; BinormalsFmt = VertFormat
+            case (7,5): HasUV5 = VertBuffNum; UV5Fmt = VertFormat
+            case (7,6): HasUV6 = VertBuffNum; UV6Fmt = VertFormat
+            case (6,1): HasColors = VertBuffNum; ColorsFmt = VertFormat
+            case (6,2): HasColors2 = VertBuffNum; Colors2Fmt = VertFormat
+            case (7,1): HasUV1 = VertBuffNum; UV1Fmt = VertFormat
+            case (7,2): HasUV2 = VertBuffNum; UV2Fmt = VertFormat
+            case (7,3): HasUV3 = VertBuffNum; UV3Fmt = VertFormat
+            case (7,4): HasUV4 = VertBuffNum; UV4Fmt = VertFormat
+            case _: print("Unknown vertex buffer combo")
+    
+    printifv(f"Writing down FacePointCounts... FaceBufferCount = {FaceBufferCount}")
+    for fb in range(FaceBufferCount):
+        FaceBuffUnk1,FaceBuffUnk2,FaceBuffUnk3,FaceBuffCount,FaceBuffLength = f.readLongs(5)
+        match fb:
+            case 0: FacePointCount = FaceBuffCount; FaceLength = FaceBuffLength
+            case 1: FacePointCountB = FaceBuffCount; FaceLengthB = FaceBuffLength
+
+    for buff in range(BufferCount2+1):
+        Buff2Unk1,Buff2Format,Buff2Unk2,Buff2Count,Buff2Length = f.readLongs(5)
+
+    f.seek_abs(FaceDataStart)
+    printifv(f"Facepoint buffer A start @{f.tell()}, Count = {FacePointCount} ({int(FacePointCount/3)})")
+
+    for fp in range(int(FacePointCount/3)):
+        fa = f.readShort() + 1
+        fb = f.readShort() + 1
+        fc = f.readShort() + 1
+        Face_array.append((fa, fb, fc))
+    
+    if (FaceBufferCount == 2):
+        printifv(f"Facepoint buffer B start @{f.tell()}, Count = {FacePointCountB}")
         
-        for fb in range(FaceBufferCount):
-            FaceBuffUnk1,FaceBuffUnk2,FaceBuffUnk3,FaceBuffCount,FaceBuffLength = f.readLongs(5)
-            match fb:
-                case 1: FacePointCount = FaceBuffCount; FaceLength = FaceBuffLength
-                case 2: FacePointCountB = FaceBuffCount; FaceLengthB = FaceBuffLength
+        for fpb in range(int(FacePointCountB/3)):
+            fa = f.readShort() + 1
+            fb = f.readShort() + 1
+            fc = f.readShort() + 1
+            FaceB_array.append((fa, fb, fc))
+        
+        printifv(f"Facepoint buffer B end @{f.tell()}")
+    
+    match VertFlags:
+        case 0x00|0x01|0x03|0x05|0x09|0x21:
+            print(f"Skipping useless VertFlags {VertFlags}")
+        case 0x31:
+            VertStartB = f.tell()
+            f.seek_abs(VertStart)
 
-        for buff in range(BufferCount2):
-            Buff2Unk1,Buff2Format,Buff2Unk2,Buff2Count,Buff2Length = f.readLongs(5)
+            for v in range(VertCount):
+                vx,vy,vz = f.readFloats(3)
+                Bone1, Bone2, Bone3, Bone4 = f.readBytes(4)
+                f.seek_rel(0x08)
+                Vert_array.append((vx,vy,vz))
+                B1_array.append((Bone1, Bone2, Bone3, Bone4))
+            
+            f.seek_abs(VertStartB)
+    
+    if not HasVertex:
+        return
+    
+    printifv(f"Positions start @ {f.tell()}")
+    match VertexFmt:
+        case 4:
+            for v in range(VertCount):
+                vx,vy,vz = f.readFloats(3)
+                Vert_array.append((vx,vy,vz))
+        case 27:
+            for v in range(VertCount):
+                vx = f.readShort()/65535 * MeshXMult + MeshXMin
+                vy = f.readShort()/65535 * MeshYMult + MeshYMin
+                vz = f.readShort()/65535 * MeshZMult + MeshZMin
+                Vert_array.append((vx,vy,vz))
+        case 42:
+            for v in range(VertCount):
+                PosVars = f.readLong(signed = True)
+                vx = PosVars & 0x3FF / 1023
+                vy = (PosVars << 10) & 0x3FF / 1023
+                vz = (PosVars << 20) & 0x3FF / 1023
+                match MeshOrient:
+                    case "X": vx = vx/4 + (PosVars << 30)/4
+                    case "Y": vy = vy/4 + (PosVars << 30)/4
+                    case "Z": vz = vz/4 + (PosVars << 30)/4
+                vx = vx * MeshXMult + MeshXMin
+                vy = vy * MeshYMult + MeshYMin
+                vz = vz * MeshZMult + MeshZMin
 
+                Vert_array.append((vx,vy,vz))
+        case _: printifv(f"Unknown position format {VertexFmt}")
+    
+    if HasWeights > 0:
+        printifv(f"Weights start @ {f.tell()}")
+        #TODO parse weights
 
-
+    if HasBones > 0:
+        #TODO parse bones
+        pass
+    if HasNormals > 0:
+        #TODO parse normals
+        pass
+    if HasTangents > 0:
+        #TODO parse tangents
+        pass
+    if HasBinormals > 0:
+        #TODO parse binormals
+        pass
+    if HasUV5 > 0:
+        #TODO parse UV5
+        pass
+    if HasUV6 > 0:
+        #TODO parse UV6
+        pass
+    if HasColors > 0:
+        #TODO parse col
+        pass
+    if HasColors2 > 0:
+        #TODO parse col2
+        pass
+    if HasUV1 > 0:
+        #TODO parse UV1
+        pass
+    if HasUV2 > 0:
+        #TODO parse UV2
+        pass
+    if HasUV3 > 0:
+        #TODO parse UV3
+        pass
+    if HasUV4 > 0:
+        #TODO parse UV4
+        pass
+    
+    for l in range(Sect3Count if parse_lods else 1):
+        lod_face_array = []
+        lod_mat_id_array = []
+        for polystruct in PolyStruct_array:
+            if polystruct['LODNum'] == 1:
+                for y in range(polystruct['PolygonCount']):
+                    # No idea what's going on here. 
+                    # Will have to untangle "AllFace_array" and "Face_array"
+                    pass
+            
+    
 
     f.close()
+
+    return buildModel(name=D3DName,
+                      verts=Vert_array,
+                      faces=Face_array,
+                      offset_face_idxs=-1,
+                      )

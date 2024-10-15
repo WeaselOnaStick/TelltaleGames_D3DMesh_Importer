@@ -14,12 +14,14 @@
 import bpy
 import os
 from .import_d3dmesh import import_d3dmesh
+from .import_skl import import_skl
 from bpy.props import StringProperty
 from bpy_extras.io_utils import ImportHelper
 
 class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.d3dmesh"
     bl_label = "Import D3DMesh"
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
     # WOAS: I hate how blender api online docs don't have ImportHelper templates or any explanation 
     # so you have to dig through templates built into blender's text editor
 
@@ -34,13 +36,13 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
     #     maxlen=255,  
     # )
 
-    parse_skel : bpy.props.BoolProperty(
+    parse_skeleton : bpy.props.BoolProperty(
         name="Import Skeleton Files (WIP)",
         default=False,
         description="Parse Skeleton Files (*.skl)\nNot Yet Implemented"
     )
 
-    UV_layers : bpy.props.EnumProperty(
+    uv_layers : bpy.props.EnumProperty(
         name="UV Layers",
         items=[
             ("MERGE",   "Merge", "", 0),
@@ -48,8 +50,14 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
             ("NO",      "Ignore UVs", "", 2)
         ]
     )
+    
+    parse_lods: bpy.props.BoolProperty(
+        name="Parse LODs",
+        description="If unchecked only first LOD is going to be imported",
+        default=False,
+    )
 
-    EarlyGameFix : bpy.props.EnumProperty(
+    early_game_fix : bpy.props.EnumProperty(
         name="Early Game Fix",
         items=[
             ("OLD",         "Texas Hold'em / Bone / CSI 3/4 / Sam and Max S1/S2 (Ep. 1/2)",""),
@@ -65,10 +73,17 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         description="Early Game Fix\nNot Yet Implemented"
     )
 
-    Verbose: bpy.props.BoolProperty(
+    verbose: bpy.props.BoolProperty(
         name="Verbose",
         description="Output extra info to the console",
         default=False,
+    )
+
+    
+    filter_glob: StringProperty(
+        default="*.d3dmesh;*.skl",
+        options={'HIDDEN'},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
 
     def execute(self, context):
@@ -78,11 +93,22 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         for f in self.files:            
             fpath = os.path.join(self.directory, f.name)
             print(f"Processing {fpath}...")
+            new_obj = None
             match os.path.splitext(f.name)[1]:
                 case ".d3dmesh":
-                    import_d3dmesh(fpath, self.Verbose, self.UV_layers, self.EarlyGameFix)
+                    new_obj = import_d3dmesh(
+                        filepath=fpath,
+                        verbose=self.verbose,
+                        uv_layers=self.uv_layers,
+                        early_game_fix=self.early_game_fix,
+                        parse_lods=self.parse_lods,
+                    )
                 case ".skl":
                     self.report({'WARNING'},f".skl files not supported yet")
+                    import_skl(
+                        #params would go here
+                    )
+            context.scene.collection.objects.link(new_obj)
 
 
         self.report({'INFO'}, "Finished!")
@@ -97,13 +123,18 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         layout = self.layout
         box = layout.box()
         box.label(text="Supports selecting multiple files", icon='DOCUMENTS')
-        layout.prop(self, "UV_layers")
         r = layout.row()
-        r.prop(self, "parse_skel")
+        r.label(text="UV Layers: ", icon='UV_DATA')
+        r.prop(self, "uv_layers", text="")
+        layout.prop(self, "parse_lods", icon='MOD_MULTIRES')
+        r = layout.row()
+        r.prop(self, "parse_skeleton", icon='ARMATURE_DATA')
         r.enabled = False
         r = layout.row()
-        r.prop(self, "EarlyGameFix")
+        r.label(text="Early Game Fix:", icon='GHOST_DISABLED')
+        r.prop(self, "early_game_fix", text="")
         r.enabled = False
+        layout.prop(self, "verbose", icon='CONSOLE')
 
 
 def menu_func_import(self, context):
