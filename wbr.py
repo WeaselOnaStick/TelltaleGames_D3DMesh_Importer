@@ -12,6 +12,10 @@ class WBR(BufferedReader):
   def readLong(self, signed = False):
     """Read long int"""
     return struct.unpack('l' if signed else 'L', self.read(4))[0]
+  
+  def readLongs(self, n : int, signed = False):
+    """Read multiple long ints"""
+    return struct.unpack(('l' if signed else 'L')*n, self.read(4*n))
 
   def readLongSigned(self):
     """Shorthand for readLong(signed=True)"""
@@ -19,7 +23,7 @@ class WBR(BufferedReader):
 
   def readByte(self, signed = False):
     """Read short int"""
-    return struct.unpack('h' if signed else 'H', self.read(2))[0]
+    return int.from_bytes(self.read(1))
 
   def readString(self, n : int):
     return ''.join([x.decode() for x in struct.unpack('c'*n, self.read(n))])
@@ -28,6 +32,10 @@ class WBR(BufferedReader):
     """Read Float"""
     return struct.unpack('f', self.read(4))[0]
   
+  def readFloats(self, n : int):
+    """Read multiple long ints"""
+    return struct.unpack('f'*n, self.read(4*n))
+  
   def seek_rel(self, offset):
     """Seek relative to current position"""
     return super().seek(offset, 1)
@@ -35,3 +43,15 @@ class WBR(BufferedReader):
   def seek_abs(self, offset):
     """Seek relative to 0"""
     return super().seek(offset, 0)
+  
+  def debugNreads(self, datatype = "L", n=16, offset=0) -> None:
+    checkpoint = self.tell()
+    self.seek_rel(offset)
+    res = []
+    match datatype:
+      case "L":
+        func = self.readLong
+
+    res = [str(func()) for i in range(n)]
+    self.seek_abs(checkpoint)
+    print("\n".join(res))
