@@ -17,24 +17,29 @@ from .import_d3dmesh import import_d3dmesh
 from .import_skl import import_skl
 from bpy.props import StringProperty
 from bpy_extras.io_utils import ImportHelper
+from math import pi
 
 class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.d3dmesh"
     bl_label = "Import D3DMesh"
-    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+    bl_options = {'REGISTER', 'PRESET'}
     # WOAS: I hate how blender api online docs don't have ImportHelper templates or any explanation 
     # so you have to dig through templates built into blender's text editor
 
     directory: bpy.props.StringProperty(subtype='FILE_PATH', options={'SKIP_SAVE', 'HIDDEN'})
     files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'})
 
-    # filename_ext = ".d3dmesh"
+    rotation : bpy.props.FloatVectorProperty(
+        name="Rotation",
+        subtype='EULER',
+        unit='ROTATION',
+        default=(pi/2,0,0)
+    )
 
-    # filter_glob : bpy.props.StringProperty(
-    #     default="*.d3dmesh;*.skl",
-    #     options={'HIDDEN'},
-    #     maxlen=255,  
-    # )
+    scale : bpy.props.FloatVectorProperty(
+        name="Scale",
+        default=(1,1,1)
+    )
 
     parse_skeleton : bpy.props.BoolProperty(
         name="Import Skeleton Files (WIP)",
