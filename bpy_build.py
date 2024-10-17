@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 
 def buildModel(name, 
                verts, 
@@ -10,6 +11,7 @@ def buildModel(name,
                verbose=False,
                offset_face_idxs = 0) -> bpy.types.Object: 
     m = bpy.data.meshes.new(name)
+    
     if offset_face_idxs != 0:
         offset_faces = []
         for f in faces:
@@ -20,6 +22,16 @@ def buildModel(name,
         faces = offset_faces
     
     m.from_pydata(verts, [], faces)
+
+    bm = bmesh.new()
+    bm.from_mesh(m)
+    
+    for v in bm.verts:
+        if len(v.link_edges) == 0:
+            bm.verts.remove(v)
+    
+    bm.to_mesh(m)
+    m.update()
     mo = bpy.data.objects.new(name,m)
     return mo
 
