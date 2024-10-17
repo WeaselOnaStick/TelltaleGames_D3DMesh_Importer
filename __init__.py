@@ -97,10 +97,10 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         for f in self.files:            
             fpath = os.path.join(self.directory, f.name)
             print(f"Processing {fpath}...")
-            new_obj = None
+            new_objs = []
             match os.path.splitext(f.name)[1]:
                 case ".d3dmesh":
-                    new_obj = import_d3dmesh(
+                    new_objs = import_d3dmesh(
                         filepath=fpath,
                         verbose=self.verbose,
                         uv_layers=self.uv_layers,
@@ -112,7 +112,14 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
                     import_skl(
                         #params would go here
                     )
-            context.scene.collection.objects.link(new_obj)
+            for new_obj in new_objs:
+                match type(new_obj):
+                    case bpy.types.Object:              
+                        context.scene.collection.objects.link(new_obj)
+                        new_obj.rotation_euler = self.rotation
+                        new_obj.scale = self.scale
+                    case _:
+                        print(new_obj)
 
 
         self.report({'INFO'}, "Finished!")
@@ -141,16 +148,85 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         r.prop(self, "early_game_fix", text="")
         r.enabled = False
         layout.prop(self, "verbose", icon='CONSOLE')
+        cache_box = layout.box()
+        cache_box = cache_box.column()
 
+        texture_names_cache =   context.preferences.addons[__name__].preferences.texture_names_cache
+        bone_names_cache =      context.preferences.addons[__name__].preferences.bone_names_cache
+
+        if texture_names_cache is None:
+            cache_box.label(text="Texture Names DB not loaded",icon='CHECKBOX_DEHLT')
+        else:
+            cache_box.label(text=f"Texture Names DB loaded ({len(texture_names_cache)} items)",icon='CHECKBOX_HLT')
+
+        if bone_names_cache is None:
+            cache_box.label(text="Bone Names DB not loaded",icon='CHECKBOX_DEHLT')
+        else:
+            cache_box.label(text=f"Bone Names DB loaded ({len(bone_names_cache)} items)",icon='CHECKBOX_HLT')
+
+        cache_box.operator("import.ttg_hashdb", icon='IMPORT')
+
+
+
+class Manual_db_import(bpy.types.Operator):
+    bl_idname = "import.ttg_hashdb"
+    bl_label = "Manually Load Databases"
+    bl_description = "Loading entire database can be slow, so it's cached internally\n\
+Hash databases are loaded on first import automatically\n\
+This operator is made to force reload the databases (in case RTB updates them)\n\
+Keep in mind loading the databases takes a while. Disabling the addon or even closing Blender will unload the cache"
+
+    def execute(self, context):
+        print(context.preferences.addons[__name__].preferences.load_databases(force = True))
+        # if isinstance(context.active_operator, D3DMesh_ImportOperator):
+        #     context.active_operator.load_databases(force=True)
+        return {"FINISHED"}
+
+
+class AddonPreferences(bpy.types.AddonPreferences):
+    bl_idname = __name__
+
+    texture_names_cache = None
+    bone_names_cache = None
+    
+    def load_databases(self, force = False):
+        from .import_d3dmesh import load_bones_db, load_tex_db
+        if self.bone_names_cache is None or force:
+            self.bone_names_cache = load_bones_db(verbose=True)
+        if self.texture_names_cache is None or force:
+            self.texture_names_cache = load_tex_db(verbose=True)
+            pass
+    
+    def draw(self, context):
+        layout = self.layout
+        cache_box = layout.column()
+        if self.texture_names_cache is None:
+            cache_box.label(text="Texture Names DB not loaded",icon='CHECKBOX_DEHLT')
+        else:
+            cache_box.label(text=f"Texture Names DB loaded ({len(self.texture_names_cache)} items)",icon='CHECKBOX_HLT')
+
+        if self.bone_names_cache is None:
+            cache_box.label(text="Bone Names DB not loaded",icon='CHECKBOX_DEHLT')
+        else:
+            cache_box.label(text=f"Bone Names DB loaded ({len(self.bone_names_cache)} items)",icon='CHECKBOX_HLT')
+
+        cache_box.operator("import.ttg_hashdb", icon='IMPORT')
+    
+
+
+
+classes_to_register = [D3DMesh_ImportOperator, Manual_db_import, AddonPreferences]
 
 def menu_func_import(self, context):
     self.layout.operator(D3DMesh_ImportOperator.bl_idname, text="D3DMesh (.d3dmesh)")
 
 def register():
-    bpy.utils.register_class(D3DMesh_ImportOperator)
+    for cls in classes_to_register:
+        bpy.utils.register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 
 def unregister():
-    bpy.utils.unregister_class(D3DMesh_ImportOperator)
+    for cls in classes_to_register:
+        bpy.utils.unregister_class(cls)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)

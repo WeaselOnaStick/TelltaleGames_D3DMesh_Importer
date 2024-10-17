@@ -3,6 +3,46 @@ from .bpy_build import buildModel
 from .bpy_build import buildSkeleton
 import bpy
 
+def load_db(db_name : str, verbose = True):
+    import os, struct
+
+    def printifv(x, end="\n"):
+        if verbose: print(x, end=end)
+
+    #TODO Handle missing DB
+    names_txt_fp = os.path.join(os.path.dirname(__file__), f"Original Scripts\\TelltaleHashDBs\\{db_name}")
+    db = {}
+    data = bytearray()
+    with WBR(open(names_txt_fp, "rb")) as f:
+        data = f.read()
+    
+    pairs_num = struct.unpack('L', data[:4])[0]
+    data_len = len(data)
+    printifv(f"importing {db_name} with {pairs_num} hash-name pairs, please be patient...")
+    cursor = 4
+    for n in range(pairs_num):
+        if cursor+9 > len(data):
+            break
+        hash2, hash1 = struct.unpack('LL', data[cursor:cursor+8])
+        cursor += 8
+        name_bytes = bytearray()
+        next_byte = data[cursor]
+        while (next_byte != 0):
+            name_bytes.append(next_byte)
+            cursor += 1
+            next_byte = data[cursor]
+        cursor += 1
+        name = name_bytes.decode('ansi')
+        db[(hash1,hash2)] = name
+    
+    return db
+
+def load_bones_db(verbose):
+    return load_db("BoneNames.HashDB", verbose)
+
+def load_tex_db(verbose):
+    return load_db("TexNames.HashDB", verbose)
+
 def import_d3dmesh(filepath,
                    verbose=False,
                    uv_layers='MERGE',
@@ -13,12 +53,12 @@ def import_d3dmesh(filepath,
     f = WBR(f)
     res = []
 
-    def printifv(x):
-        if verbose: print(x)
+    def printifv(x, end="\n"):
+        if verbose: print(x, end=end)
 
-    Face_array = []
+    AllFace_array = []
     FaceB_array = []
-    Vert_array = []
+    AllVert_array = []
     Normal_array = []
     UV_array = []
     UV2_array = []
@@ -156,7 +196,7 @@ def import_d3dmesh(filepath,
             unknown3 = f.readLong()
             MatNum = f.readLong() + 1
             unknown4 = f.readLong() + 1
-            if polt == 1 or (polt > 1 and parse_lods):
+            if polt == 0 or (polt >= 1 and parse_lods):
                 PolyStruct_array.append({
                         "VertexStart" : VertexStart,
                         "VertexMin" : VertexMin,
@@ -412,22 +452,22 @@ def import_d3dmesh(filepath,
         VertLayer = f.readLong() + 1
         VertBuffNum = f.readLong() + 1
         VertOffset = f.readLong() + 1
-        printifv(f"Vertex Type = {VertType}, Format = {VertFormat},  Layer = {VertLayer}, Buffer Number = {VertBuffNum}, Offset = {VertOffset}")
+        printifv(f"Vertex Type = {VertType}, Format = {VertFormat},  Layer = {VertLayer}, Buffer Number = {VertBuffNum}, Offset = {VertOffset}", end=" ")
         match (VertType, VertLayer):
-            case (1,1): HasVertex = VertBuffNum; VertexFmt = VertFormat
-            case (4,1): HasWeights = VertBuffNum; WeightsFmt = VertFormat
-            case (5,1): HasBones = VertBuffNum; BonesFmt = VertFormat
-            case (2,1): HasNormals = VertBuffNum; NormalsFmt = VertFormat
-            case (3,1): HasTangents = VertBuffNum; TangentsFmt = VertFormat
-            case (2,2): HasBinormals = VertBuffNum; BinormalsFmt = VertFormat
-            case (7,5): HasUV5 = VertBuffNum; UV5Fmt = VertFormat
-            case (7,6): HasUV6 = VertBuffNum; UV6Fmt = VertFormat
-            case (6,1): HasColors = VertBuffNum; ColorsFmt = VertFormat
-            case (6,2): HasColors2 = VertBuffNum; Colors2Fmt = VertFormat
-            case (7,1): HasUV1 = VertBuffNum; UV1Fmt = VertFormat
-            case (7,2): HasUV2 = VertBuffNum; UV2Fmt = VertFormat
-            case (7,3): HasUV3 = VertBuffNum; UV3Fmt = VertFormat
-            case (7,4): HasUV4 = VertBuffNum; UV4Fmt = VertFormat
+            case (1,1): HasVertex = VertBuffNum; VertexFmt = VertFormat     ; printifv(f"(Vertex Format)")
+            case (4,1): HasWeights = VertBuffNum; WeightsFmt = VertFormat   ; printifv(f"(Weights Format)")
+            case (5,1): HasBones = VertBuffNum; BonesFmt = VertFormat       ; printifv(f"(Bones Format)")
+            case (2,1): HasNormals = VertBuffNum; NormalsFmt = VertFormat   ; printifv(f"(Normals Format)")
+            case (3,1): HasTangents = VertBuffNum; TangentsFmt = VertFormat ; printifv(f"(Tangents Format)")
+            case (2,2): HasBinormals = VertBuffNum; BinormalsFmt = VertFormat;printifv(f"(Binormals Format)")
+            case (7,5): HasUV5 = VertBuffNum; UV5Fmt = VertFormat           ; printifv(f"(UV5 Format)")
+            case (7,6): HasUV6 = VertBuffNum; UV6Fmt = VertFormat           ; printifv(f"(UV6 Format)")
+            case (6,1): HasColors = VertBuffNum; ColorsFmt = VertFormat     ; printifv(f"(Colors Format)")
+            case (6,2): HasColors2 = VertBuffNum; Colors2Fmt = VertFormat   ; printifv(f"(Colors2 Format)")
+            case (7,1): HasUV1 = VertBuffNum; UV1Fmt = VertFormat           ; printifv(f"(UV1 Format)")
+            case (7,2): HasUV2 = VertBuffNum; UV2Fmt = VertFormat           ; printifv(f"(UV2 Format)")
+            case (7,3): HasUV3 = VertBuffNum; UV3Fmt = VertFormat           ; printifv(f"(UV3 Format)")
+            case (7,4): HasUV4 = VertBuffNum; UV4Fmt = VertFormat           ; printifv(f"(UV4 Format)")
             case _: print("Unknown vertex buffer combo")
     
     printifv(f"Writing down FacePointCounts... FaceBufferCount = {FaceBufferCount}")
@@ -447,7 +487,7 @@ def import_d3dmesh(filepath,
         fa = f.readShort() + 1
         fb = f.readShort() + 1
         fc = f.readShort() + 1
-        Face_array.append((fa, fb, fc))
+        AllFace_array.append((fa, fb, fc))
     
     if (FaceBufferCount == 2):
         printifv(f"Facepoint buffer B start @{f.tell()}, Count = {FacePointCountB}")
@@ -462,7 +502,7 @@ def import_d3dmesh(filepath,
     
     match VertFlags:
         case 0x00|0x01|0x03|0x05|0x09|0x21:
-            print(f"Skipping useless VertFlags {VertFlags}")
+            print(f"Skipping useless VertFlags {VertFlags:x}")
         case 0x31:
             VertStartB = f.tell()
             f.seek_abs(VertStart)
@@ -471,7 +511,7 @@ def import_d3dmesh(filepath,
                 vx,vy,vz = f.readFloats(3)
                 Bone1, Bone2, Bone3, Bone4 = f.readBytes(4)
                 f.seek_rel(0x08)
-                Vert_array.append((vx,vy,vz))
+                AllVert_array.append((vx,vy,vz))
                 B1_array.append((Bone1, Bone2, Bone3, Bone4))
             
             f.seek_abs(VertStartB)
@@ -484,32 +524,35 @@ def import_d3dmesh(filepath,
         case 4:
             for v in range(VertCount):
                 vx,vy,vz = f.readFloats(3)
-                Vert_array.append((vx,vy,vz))
+                AllVert_array.append((vx,vy,vz))
         case 27:
             for v in range(VertCount):
                 vx = f.readShort()/65535 * MeshXMult + MeshXMin
                 vy = f.readShort()/65535 * MeshYMult + MeshYMin
                 vz = f.readShort()/65535 * MeshZMult + MeshZMin
-                Vert_array.append((vx,vy,vz))
+                vq = f.readShort() / 65535
+                AllVert_array.append((vx,vy,vz))
         case 42:
             for v in range(VertCount):
-                PosVars = f.readLong(signed = True)
-                vx = PosVars & 0x3FF / 1023
-                vy = (PosVars << 10) & 0x3FF / 1023
-                vz = (PosVars << 20) & 0x3FF / 1023
+                PosVars = f.readLong() # for some reason RTB's script reads this as signed Long
+                vx = (PosVars & 0x3FF) / 1023
+                vy = ((PosVars >> 10) & 0x3FF) / 1023
+                vz = ((PosVars >> 20) & 0x3FF) / 1023
                 match MeshOrient:
-                    case "X": vx = vx/4 + (PosVars << 30)/4
-                    case "Y": vy = vy/4 + (PosVars << 30)/4
-                    case "Z": vz = vz/4 + (PosVars << 30)/4
+                    case "X": vx = vx/4 + (PosVars >> 30)/4
+                    case "Y": vy = vy/4 + (PosVars >> 30)/4
+                    case "Z": vz = vz/4 + (PosVars >> 30)/4
+                    case _: pass
                 vx = vx * MeshXMult + MeshXMin
                 vy = vy * MeshYMult + MeshYMin
                 vz = vz * MeshZMult + MeshZMin
 
-                Vert_array.append((vx,vy,vz))
+                AllVert_array.append((vx,vy,vz))
         case _: printifv(f"Unknown position format {VertexFmt}")
     
     if HasWeights > 0:
-        printifv(f"Weights start @ {f.tell()}")
+        pass
+        #printifv(f"Weights start @ {f.tell()}")
         #TODO parse weights
 
     if HasBones > 0:
@@ -548,23 +591,35 @@ def import_d3dmesh(filepath,
     if HasUV4 > 0:
         #TODO parse UV4
         pass
+
+    for polystruct in PolyStruct_array:
+        print(f"Polygon_Info_Dict {polystruct}")
     
-    for l in range(Sect3Count if parse_lods else 1):
+    for lodnum in range(Sect3Count if parse_lods else 1):
         lod_face_array = []
         lod_mat_id_array = []
+        # No idea what's going on here. 
+        # VertexStart seems to be some sort of offset?
+        # It's trying to add VertexStart (int) to array of faces?
+        # Either way it seems to almost always just be 0
         for polystruct in PolyStruct_array:
-            if polystruct['LODNum'] == 1:
+            if polystruct['LODNum'] == 0:
                 for y in range(polystruct['PolygonCount']):
-                    # No idea what's going on here. 
-                    # Will have to untangle "AllFace_array" and "Face_array"
-                    pass
-            
+                    Faces3 = AllFace_array[polystruct['PolygonStart']+y-2] + polystruct['VertexStart']
+                    lod_face_array.append(Faces3)
+                    lod_mat_id_array.append(polystruct['MatNum'])
+        
+        res.append(
+            {
+                "name" : D3DName + ('' if not parse_lods else f"(LOD #{lodnum})"),
+                "verts" : "",
+                "faces" : "",
+                "offset_face_idxs" : -1,
+            }
+        )
     
-
     f.close()
-
-    return buildModel(name=D3DName,
-                      verts=Vert_array,
-                      faces=Face_array,
-                      offset_face_idxs=-1,
-                      )
+    res_models = []
+    for res_data in res:
+        res_models.append(buildModel(**res_data))
+    return res_models
