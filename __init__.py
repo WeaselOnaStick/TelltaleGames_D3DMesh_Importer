@@ -79,11 +79,10 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
     )
 
     verbose: bpy.props.BoolProperty(
-        name="Verbose",
+        name="Verbose Console Output",
         description="Output extra info to the console",
-        default=False,
+        default=True,
     )
-
     
     filter_glob: StringProperty(
         default="*.d3dmesh;*.skl",
@@ -128,6 +127,8 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         layout = self.layout
         box = layout.box()
         box.label(text="Supports selecting multiple files", icon='DOCUMENTS')
+        layout.prop(self, "rotation")
+        layout.prop(self, "scale")
         r = layout.row()
         r.label(text="UV Layers: ", icon='UV_DATA')
         r.prop(self, "uv_layers", text="")
