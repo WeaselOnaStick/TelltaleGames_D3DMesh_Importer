@@ -47,6 +47,18 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         description="Parse Skeleton Files (*.skl)\nNot Yet Implemented"
     )
 
+    parse_materials : bpy.props.BoolProperty(
+        name="Parse Materials",
+        default=True,
+        description=""
+    )
+
+    parse_textures : bpy.props.BoolProperty(
+        name="Parse Textures",
+        default=True,
+        description=""
+    )
+
     uv_layers : bpy.props.EnumProperty(
         name="UV Layers",
         items=[
@@ -92,7 +104,13 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         if not self.directory:
-            return {'CANCELLED'}      
+            return {'CANCELLED'}
+
+        if self.parse_skeleton and context.preferences.addons[__name__].preferences.bone_names_cached_amt == 0:
+            context.preferences.addons[__name__].preferences.load_databases(force = False)
+        
+        if (self.parse_textures or self.parse_materials) and context.preferences.addons[__name__].preferences.tex_names_cached_amt == 0:
+            context.preferences.addons[__name__].preferences.load_databases(force = False)
         
         for f in self.files:            
             fpath = os.path.join(self.directory, f.name)
@@ -106,6 +124,8 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
                         uv_layers=self.uv_layers,
                         early_game_fix=self.early_game_fix,
                         parse_lods=self.parse_lods,
+                        bone_db=context.preferences.addons[__name__].preferences.get_bone_database(),
+                        tex_db=context.preferences.addons[__name__].preferences.get_tex_database(),
                     )
                 case ".skl":
                     self.report({'WARNING'},f".skl files not supported yet")
@@ -136,6 +156,8 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         box.label(text="Supports selecting multiple files", icon='DOCUMENTS')
         layout.prop(self, "rotation")
         layout.prop(self, "scale")
+        layout.prop(self, "parse_materials", icon='MATERIAL_DATA')
+        layout.prop(self, "parse_textures", icon='TEXTURE')
         r = layout.row()
         r.label(text="UV Layers: ", icon='UV_DATA')
         r.prop(self, "uv_layers", text="")
@@ -174,7 +196,7 @@ class Manual_db_import(bpy.types.Operator):
     bl_description = "Loading entire database can be slow, so it's cached internally\n\
 Hash databases are loaded on first import automatically\n\
 This operator is made to force reload the databases (in case RTB updates them)\n\
-Keep in mind loading the databases takes a while. Disabling the addon or even closing Blender will unload the cache"
+Keep in mind loading the databases takes a while. Disabling the addon or closing Blender will unload the cache"
 
     def execute(self, context):
         context.preferences.addons[__name__].preferences.load_databases(force = True)
@@ -198,20 +220,24 @@ class AddonPreferences(bpy.types.AddonPreferences):
     def load_databases(self, force = False):
         import pickle
         from .import_d3dmesh import load_bones_db, load_tex_db
-        if self.bone_names_cache_pickled is None or force:
+        if self.bone_names_cache_pickled == "" or force:
             bones_db = load_bones_db(verbose=True)
             self.bone_names_cached_amt = len(bones_db)
             self.bone_names_cache_pickled = pickle.dumps(bones_db).hex()
-        if self.texture_names_cache_pickled  is None or force:
+        if self.texture_names_cache_pickled == "" or force:
             tex_db = load_tex_db(verbose=True)
             self.tex_names_cached_amt = len(tex_db)
             self.texture_names_cache_pickled = pickle.dumps(tex_db).hex()
 
-    def get_bones_database(self):
+    def get_bone_database(self):
+        if self.bone_names_cache_pickled == "":
+            return
         import pickle
         return pickle.loads(bytes.fromhex(self.bone_names_cache_pickled))
     
     def get_tex_database(self):
+        if self.texture_names_cache_pickled == "":
+            return
         import pickle
         return pickle.loads(bytes.fromhex(self.texture_names_cache_pickled))
 

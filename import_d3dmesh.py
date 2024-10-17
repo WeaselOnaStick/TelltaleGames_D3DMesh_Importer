@@ -48,6 +48,8 @@ def import_d3dmesh(filepath,
                    uv_layers='MERGE',
                    early_game_fix=0,
                    parse_lods = False,
+                   tex_db = None,
+                   bone_db = None,
                    ) -> list[bpy.types.Object]:
     f = open(filepath, 'rb')
     f = WBR(f)
@@ -511,7 +513,7 @@ def import_d3dmesh(filepath,
                 vx,vy,vz = f.readFloats(3)
                 Bone1, Bone2, Bone3, Bone4 = f.readBytes(4)
                 f.seek_rel(0x08)
-                AllVert_array.append((vx,vy,vz))
+                #AllVert_array.append((vx,vy,vz))
                 B1_array.append((Bone1, Bone2, Bone3, Bone4))
             
             f.seek_abs(VertStartB)
