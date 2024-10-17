@@ -48,6 +48,7 @@ def import_d3dmesh(filepath,
                    uv_layers='MERGE',
                    early_game_fix=0,
                    parse_lods = False,
+                   join_submeshes = True,
                    tex_db = None,
                    bone_db = None,
                    ) -> list[bpy.types.Object]:
@@ -198,7 +199,7 @@ def import_d3dmesh(filepath,
             unknown3 = f.readLong()
             MatNum = f.readLong() + 1
             unknown4 = f.readLong() + 1
-            if polt == 0 or (polt >= 1 and parse_lods):
+            if lodc == 0 or (lodc >= 1 and parse_lods):
                 PolyStruct_array.append({
                         "VertexStart" : VertexStart,
                         "VertexMin" : VertexMin,
@@ -207,7 +208,7 @@ def import_d3dmesh(filepath,
                         "PolygonCount" : PolygonCount,
                         "FacePointCount" : FacePointCount,
                         "MatNum" : MatNum,
-                        "LODNum" : polt,
+                        "LODNum" : lodc,
                         }
                 )
             printifv(f"Bounding Box = {BoundingMinX, BoundingMinY, BoundingMinZ}|{BoundingMaxX, BoundingMaxY, BoundingMaxZ}")
@@ -513,7 +514,7 @@ def import_d3dmesh(filepath,
                 vx,vy,vz = f.readFloats(3)
                 Bone1, Bone2, Bone3, Bone4 = f.readBytes(4)
                 f.seek_rel(0x08)
-                #AllVert_array.append((vx,vy,vz))
+                #AllVert_array.append((vx,vy,vz)) duplicate verts?
                 B1_array.append((Bone1, Bone2, Bone3, Bone4))
             
             f.seek_abs(VertStartB)
@@ -597,31 +598,48 @@ def import_d3dmesh(filepath,
     for polystruct in PolyStruct_array:
         print(f"Polygon_Info_Dict {polystruct}")
     
-    if (False): # disabling until I figure out polystruct appendages
-        for lodnum in range(Sect3Count if parse_lods else 1):
-            lod_face_array = []
-            lod_mat_id_array = []
-            # No idea what's going on here. 
-            # VertexStart seems to be some sort of offset?
-            # It's trying to add VertexStart (int) to array of faces?
-            # Either way it seems to almost always just be 0
+    parse_lods = parse_lods and Sect3Count > 1
+
+    for lodnum in range(Sect3Count):
+        face_array = []
+        mat_id_array = []
+        if join_submeshes:
+            joined_faces_array = []
             for polystruct in PolyStruct_array:
-                if polystruct['LODNum'] == 0:
+                if polystruct['LODNum'] == lodnum:
                     for y in range(polystruct['PolygonCount']):
-                        Faces3 = AllFace_array[polystruct['PolygonStart']+y-2] + polystruct['VertexStart']
-                        lod_face_array.append(Faces3)
-                        lod_mat_id_array.append(polystruct['MatNum'])
-            
-    
-    lodnum = 0
-    res.append(
-        {
-            "name" : D3DName + ('' if not parse_lods else f"(LOD #{lodnum})"),
-            "verts" : AllVert_array,
-            "faces" : AllFace_array,
-            "offset_face_idxs" : -1,
-        }
-    )
+                        Faces3 = AllFace_array[polystruct['PolygonStart']+y-2]
+                        for fv in Faces3:
+                            fv += polystruct['VertexStart']
+                        joined_faces_array.append(Faces3)
+                        #mat_id_array.append(polystruct['MatNum'])
+            name = f"{D3DName}" + (f" (LOD #{lodnum})" if parse_lods else "")
+            lodmodel_data = {
+                "name": name,
+                "verts" : AllVert_array,
+                "faces" : joined_faces_array,
+                "offset_face_idxs" : -1,
+            }
+
+            res.append(lodmodel_data)
+        else:
+            for polynum,polystruct in enumerate(PolyStruct_array):
+                face_array = []
+                if polystruct['LODNum'] == lodnum:
+                    for y in range(polystruct['PolygonCount']):
+                        Faces3 = AllFace_array[polystruct['PolygonStart']+y-1]
+                        for fv in Faces3:
+                            fv += polystruct['VertexStart']
+                        face_array.append(Faces3)
+                        mat_id_array.append(polystruct['MatNum'])
+                        name = f"{D3DName}_" + f"{polynum}".zfill(3) + (f" (LOD #{lodnum})" if parse_lods else "")
+                    lodmodel_data = {
+                        "name": name,
+                        "verts" : AllVert_array,
+                        "faces" : face_array,
+                        "offset_face_idxs" : -1,
+                    }
+                    res.append(lodmodel_data)
 
     f.close()
     res_models = []

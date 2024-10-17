@@ -49,13 +49,13 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
 
     parse_materials : bpy.props.BoolProperty(
         name="Parse Materials",
-        default=True,
+        default=False,
         description=""
     )
 
     parse_textures : bpy.props.BoolProperty(
         name="Parse Textures",
-        default=True,
+        default=False,
         description=""
     )
 
@@ -65,12 +65,19 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
             ("MERGE",   "Merge", "", 0),
             ("SPLIT",   "Split", "", 1),
             ("NO",      "Ignore UVs", "", 2)
-        ]
+        ],
+        default='NO',
     )
     
     parse_lods: bpy.props.BoolProperty(
         name="Parse LODs",
         description="If unchecked only first LOD is going to be imported",
+        default=False,
+    )
+
+    join_submeshes: bpy.props.BoolProperty(
+        name="Join Submeshes",
+        description="",
         default=False,
     )
 
@@ -105,12 +112,14 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         if not self.directory:
             return {'CANCELLED'}
+        prefs = AddonPreferences(context.preferences.addons[__name__].preferences)
 
-        if self.parse_skeleton and context.preferences.addons[__name__].preferences.bone_names_cached_amt == 0:
-            context.preferences.addons[__name__].preferences.load_databases(force = False)
+        if self.parse_skeleton and prefs.bone_names_cached_amt == 0:
+            prefs.load_databases(force = False)
         
-        if (self.parse_textures or self.parse_materials) and context.preferences.addons[__name__].preferences.tex_names_cached_amt == 0:
-            context.preferences.addons[__name__].preferences.load_databases(force = False)
+        if (self.parse_textures or self.parse_materials) and prefs.tex_names_cached_amt == 0:
+            prefs.load_databases(force = False)
+
         
         for f in self.files:            
             fpath = os.path.join(self.directory, f.name)
@@ -124,8 +133,9 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
                         uv_layers=self.uv_layers,
                         early_game_fix=self.early_game_fix,
                         parse_lods=self.parse_lods,
-                        bone_db=context.preferences.addons[__name__].preferences.get_bone_database(),
-                        tex_db=context.preferences.addons[__name__].preferences.get_tex_database(),
+                        join_submeshes=self.join_submeshes,
+                        bone_db=prefs.get_bone_database(),
+                        tex_db=prefs.get_tex_database(),
                     )
                 case ".skl":
                     self.report({'WARNING'},f".skl files not supported yet")
@@ -146,10 +156,6 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         return {"FINISHED"}
     
     
-    # def invoke(self, context, event):
-    #     return self.invoke_popup(context)
-    
-    
     def draw(self, context):
         layout = self.layout
         box = layout.box()
@@ -161,6 +167,7 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         r = layout.row()
         r.label(text="UV Layers: ", icon='UV_DATA')
         r.prop(self, "uv_layers", text="")
+        layout.prop(self, "join_submeshes", icon='STICKY_UVS_LOC')
         layout.prop(self, "parse_lods", icon='MOD_MULTIRES')
         r = layout.row()
         r.prop(self, "parse_skeleton", icon='ARMATURE_DATA')
@@ -196,7 +203,7 @@ class Manual_db_import(bpy.types.Operator):
     bl_description = "Loading entire database can be slow, so it's cached internally\n\
 Hash databases are loaded on first import automatically\n\
 This operator is made to force reload the databases (in case RTB updates them)\n\
-Keep in mind loading the databases takes a while. Disabling the addon or closing Blender will unload the cache"
+Keep in mind loading the databases takes some time. Disabling the addon will unload the cache"
 
     def execute(self, context):
         context.preferences.addons[__name__].preferences.load_databases(force = True)
