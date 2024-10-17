@@ -595,29 +595,32 @@ def import_d3dmesh(filepath,
     for polystruct in PolyStruct_array:
         print(f"Polygon_Info_Dict {polystruct}")
     
-    for lodnum in range(Sect3Count if parse_lods else 1):
-        lod_face_array = []
-        lod_mat_id_array = []
-        # No idea what's going on here. 
-        # VertexStart seems to be some sort of offset?
-        # It's trying to add VertexStart (int) to array of faces?
-        # Either way it seems to almost always just be 0
-        for polystruct in PolyStruct_array:
-            if polystruct['LODNum'] == 0:
-                for y in range(polystruct['PolygonCount']):
-                    Faces3 = AllFace_array[polystruct['PolygonStart']+y-2] + polystruct['VertexStart']
-                    lod_face_array.append(Faces3)
-                    lod_mat_id_array.append(polystruct['MatNum'])
-        
-        res.append(
-            {
-                "name" : D3DName + ('' if not parse_lods else f"(LOD #{lodnum})"),
-                "verts" : "",
-                "faces" : "",
-                "offset_face_idxs" : -1,
-            }
-        )
+    if (False): # disabling until I figure out polystruct appendages
+        for lodnum in range(Sect3Count if parse_lods else 1):
+            lod_face_array = []
+            lod_mat_id_array = []
+            # No idea what's going on here. 
+            # VertexStart seems to be some sort of offset?
+            # It's trying to add VertexStart (int) to array of faces?
+            # Either way it seems to almost always just be 0
+            for polystruct in PolyStruct_array:
+                if polystruct['LODNum'] == 0:
+                    for y in range(polystruct['PolygonCount']):
+                        Faces3 = AllFace_array[polystruct['PolygonStart']+y-2] + polystruct['VertexStart']
+                        lod_face_array.append(Faces3)
+                        lod_mat_id_array.append(polystruct['MatNum'])
+            
     
+    lodnum = 0
+    res.append(
+        {
+            "name" : D3DName + ('' if not parse_lods else f"(LOD #{lodnum})"),
+            "verts" : AllVert_array,
+            "faces" : AllFace_array,
+            "offset_face_idxs" : -1,
+        }
+    )
+
     f.close()
     res_models = []
     for res_data in res:
