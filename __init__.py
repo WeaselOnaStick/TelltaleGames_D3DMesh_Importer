@@ -151,18 +151,18 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
         cache_box = layout.box()
         cache_box = cache_box.column()
 
-        texture_names_cache =   context.preferences.addons[__name__].preferences.texture_names_cache
-        bone_names_cache =      context.preferences.addons[__name__].preferences.bone_names_cache
+        bone_names_cached_amt  =   context.preferences.addons[__name__].preferences.bone_names_cached_amt
+        tex_names_cached_amt =      context.preferences.addons[__name__].preferences.tex_names_cached_amt
 
-        if texture_names_cache is None:
-            cache_box.label(text="Texture Names DB not loaded",icon='CHECKBOX_DEHLT')
-        else:
-            cache_box.label(text=f"Texture Names DB loaded ({len(texture_names_cache)} items)",icon='CHECKBOX_HLT')
-
-        if bone_names_cache is None:
+        if bone_names_cached_amt == 0:
             cache_box.label(text="Bone Names DB not loaded",icon='CHECKBOX_DEHLT')
         else:
-            cache_box.label(text=f"Bone Names DB loaded ({len(bone_names_cache)} items)",icon='CHECKBOX_HLT')
+            cache_box.label(text=f"Bone Names DB loaded ({bone_names_cached_amt}) items)",icon='CHECKBOX_HLT')
+
+        if tex_names_cached_amt == 0:
+            cache_box.label(text="Texture Names DB not loaded",icon='CHECKBOX_DEHLT')
+        else:
+            cache_box.label(text=f"Texture Names DB loaded ({tex_names_cached_amt} items)",icon='CHECKBOX_HLT')
 
         cache_box.operator("import.ttg_hashdb", icon='IMPORT')
 
@@ -177,38 +177,63 @@ This operator is made to force reload the databases (in case RTB updates them)\n
 Keep in mind loading the databases takes a while. Disabling the addon or even closing Blender will unload the cache"
 
     def execute(self, context):
-        print(context.preferences.addons[__name__].preferences.load_databases(force = True))
-        # if isinstance(context.active_operator, D3DMesh_ImportOperator):
-        #     context.active_operator.load_databases(force=True)
+        context.preferences.addons[__name__].preferences.load_databases(force = True)
         return {"FINISHED"}
 
 
 class AddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
 
-    texture_names_cache = None
-    bone_names_cache = None
+    bone_names_cache_pickled : bpy.props.StringProperty(
+        name="Bone Names DB pickled"
+    )    
+
+    texture_names_cache_pickled :  bpy.props.StringProperty(
+        name="Texture Names DB pickled"
+    )
+
+    bone_names_cached_amt : bpy.props.IntProperty(default=0)
+    tex_names_cached_amt : bpy.props.IntProperty(default=0)
     
     def load_databases(self, force = False):
+        import pickle
         from .import_d3dmesh import load_bones_db, load_tex_db
-        if self.bone_names_cache is None or force:
-            self.bone_names_cache = load_bones_db(verbose=True)
-        if self.texture_names_cache is None or force:
-            self.texture_names_cache = load_tex_db(verbose=True)
-            pass
+        if self.bone_names_cache_pickled is None or force:
+            bones_db = load_bones_db(verbose=True)
+            self.bone_names_cached_amt = len(bones_db)
+            self.bone_names_cache_pickled = pickle.dumps(bones_db).hex()
+        if self.texture_names_cache_pickled  is None or force:
+            tex_db = load_tex_db(verbose=True)
+            self.tex_names_cached_amt = len(tex_db)
+            self.texture_names_cache_pickled = pickle.dumps(tex_db).hex()
+
+    def get_bones_database(self):
+        import pickle
+        return pickle.loads(bytes.fromhex(self.bone_names_cache_pickled))
     
+    def get_tex_database(self):
+        import pickle
+        return pickle.loads(bytes.fromhex(self.texture_names_cache_pickled))
+
+    
+
+
     def draw(self, context):
         layout = self.layout
         cache_box = layout.column()
-        if self.texture_names_cache is None:
-            cache_box.label(text="Texture Names DB not loaded",icon='CHECKBOX_DEHLT')
-        else:
-            cache_box.label(text=f"Texture Names DB loaded ({len(self.texture_names_cache)} items)",icon='CHECKBOX_HLT')
+        
+        bone_names_cached_amt = self.bone_names_cached_amt
+        tex_names_cached_amt = self.tex_names_cached_amt
 
-        if self.bone_names_cache is None:
+        if bone_names_cached_amt == 0:
             cache_box.label(text="Bone Names DB not loaded",icon='CHECKBOX_DEHLT')
         else:
-            cache_box.label(text=f"Bone Names DB loaded ({len(self.bone_names_cache)} items)",icon='CHECKBOX_HLT')
+            cache_box.label(text=f"Bone Names DB loaded ({bone_names_cached_amt}) items)",icon='CHECKBOX_HLT')
+
+        if tex_names_cached_amt == 0:
+            cache_box.label(text="Texture Names DB not loaded",icon='CHECKBOX_DEHLT')
+        else:
+            cache_box.label(text=f"Texture Names DB loaded ({tex_names_cached_amt} items)",icon='CHECKBOX_HLT')
 
         cache_box.operator("import.ttg_hashdb", icon='IMPORT')
     
