@@ -238,13 +238,13 @@ class AddonPreferences(bpy.types.AddonPreferences):
 
     def get_bone_database(self):
         if self.bone_names_cache_pickled == "":
-            return
+            return {}
         import pickle
         return pickle.loads(bytes.fromhex(self.bone_names_cache_pickled))
     
     def get_tex_database(self):
         if self.texture_names_cache_pickled == "":
-            return
+            return {}
         import pickle
         return pickle.loads(bytes.fromhex(self.texture_names_cache_pickled))
 
@@ -281,6 +281,7 @@ def menu_func_import(self, context):
 def register():
     for cls in classes_to_register:
         bpy.utils.register_class(cls)
+    
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 

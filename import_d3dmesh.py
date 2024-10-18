@@ -1,6 +1,7 @@
 from .wbr import WBR
 from .bpy_build import buildModel
 from .bpy_build import buildSkeleton
+import pickle
 import bpy
 
 def load_db(db_name : str, verbose = True):
@@ -9,8 +10,16 @@ def load_db(db_name : str, verbose = True):
     def printifv(x, end="\n"):
         if verbose: print(x, end=end)
 
+    path_to_pickled_db = os.path.join(os.path.dirname(__file__),f"Original Scripts\\TelltaleHashDBs\\{db_name}.HashDB.pickled")
+    pickled_yet = os.path.isfile(path_to_pickled_db)
+    if pickled_yet:
+        printifv(f"Found pickled database @{path_to_pickled_db}, skipping reading unpickled variant")
+        pdata = None
+        with open(path_to_pickled_db, "rb") as f: pdata = f.read()
+        return pickle.loads(pdata)
+        
     #TODO Handle missing DB
-    names_txt_fp = os.path.join(os.path.dirname(__file__), f"Original Scripts\\TelltaleHashDBs\\{db_name}")
+    names_txt_fp = os.path.join(os.path.dirname(__file__), f"Original Scripts\\TelltaleHashDBs\\{db_name}.HashDB")
     db = {}
     data = bytearray()
     with WBR(open(names_txt_fp, "rb")) as f:
@@ -35,13 +44,15 @@ def load_db(db_name : str, verbose = True):
         name = name_bytes.decode('ansi')
         db[(hash1,hash2)] = name
     
+    with open(path_to_pickled_db, "wb") as f: f.write(pickle.dumps(db))
+
     return db
 
 def load_bones_db(verbose):
-    return load_db("BoneNames.HashDB", verbose)
+    return load_db("BoneNames", verbose)
 
 def load_tex_db(verbose):
-    return load_db("TexNames.HashDB", verbose)
+    return load_db("TexNames", verbose)
 
 def import_d3dmesh(filepath,
                    verbose=False,
@@ -49,8 +60,8 @@ def import_d3dmesh(filepath,
                    early_game_fix=0,
                    parse_lods = False,
                    join_submeshes = True,
-                   tex_db = None,
-                   bone_db = None,
+                   tex_db = {},
+                   bone_db = {},
                    ) -> list[bpy.types.Object]:
     f = open(filepath, 'rb')
     f = WBR(f)
@@ -146,6 +157,14 @@ def import_d3dmesh(filepath,
             MatSectCount = f.readLong()
             printifv(f"Material Param #{mp+1} Hash: {MatSectHash1.rjust(8)} {MatSectHash2.rjust(8)}, Count = {MatSectCount:12d}, \t@{f.tell()}")
             match (MatSectHash1, MatSectHash2):
+                case ("264ac2f2", "544e517c"): f.seek_rel(-0x04) # Hacky fix for "adv_boardingSchoolExterior_meshesABuilding" to prevent erroring.
+                case ("873c2f18", "35428297"): f.seek_rel(0x08) # Hacky fix for "obj_vehicleTruckForestShack" to prevent erroring.
+                case ("4e7d91f1", "6f97a3c2"): f.seek_rel(-0x04) # Hacky fix for "ui_icon" to prevent erroring.
+                case ("fec9ffdf", "25b43917"): f.seek_rel(-0x04) # Hacky fix for "ui_mask" to prevent erroring.
+                case ("b76e07d6","bb899bfe"):
+                    for y in range(MatSectCount):
+                        unks = f.readLongs(2)
+                        unkfs = f.readFloats(4)
                 case ("4f0234","63d89fb0"):
                     for y in range(MatSectCount):
                         MatUnkHashs = f.readLongs(4)
@@ -157,7 +176,37 @@ def import_d3dmesh(filepath,
                     for y in range(MatSectCount):
                         MatUnkHash2, MatUnkHash1 = f.readLongs(2)
                         MatUnkBytePad = f.readByte()
-
+                case ("394c43af", "4ff52c94"):
+                    for y in range(MatSectCount):
+                        # Three floats
+                        unks = f.readLongs(2)
+                        unkfs = f.readFloats(3)
+                case ("7bbca244", "e61f1a07"):
+                    for y in range(MatSectCount):
+                        # Two floats
+                        unks = f.readLongs(2)
+                        unkfs = f.readFloats(2)
+                case ("c16762f7", "763d62ab"):
+                    for y in range(MatSectCount):
+                        # Four floats
+                        unks = f.readLongs(2)
+                        unkfs = f.readFloats(4)
+                case ("e2ba743e", "952f9338"):
+                    for y in range(MatSectCount):
+                        # Two hash sets
+                        MatUnks = f.readLongs(6)
+                case ("52a09151", "f1c3f2c7"):
+                    printifv("-----------")
+                    printifv(f"Material #{mp} uses following textures:")
+                    for param_sect in range(MatSectCount):
+                        TypeHash2, TypeHash1 =  f"{f.readLong():x}", f"{f.readLong():x}"
+                        tex_type, tex_subtype = mat_type_lookup.get((TypeHash1, TypeHash2))
+                        TexHash2, TexHash1 = f.readLongs(2)
+                        lookup_tex_name = tex_db.get((TexHash1, TexHash2))
+                        TexName = f"{TexHash1:x}{TexHash2:x}" if lookup_tex_name is None else lookup_tex_name
+                        printifv(f"{tex_type}|{tex_subtype} - {TexName}")
+        
+        MatHash_array.append({"MatHash1":MatHash1,"MatHash2":MatHash2,"TexDifName":TexName})
         f.seek_abs(MatHeaderSize)
     
     printifv(f"Section 2 (Material Info) end @{f.tell()}")
@@ -168,10 +217,8 @@ def import_d3dmesh(filepath,
 
     Sect3End = f.tell() + f.readLong()
     Sect3Count = f.readLong()
-    #f.debugNreads("L", n=32)
     printifv(f"Section 3 (LOD info) start @{f.tell()}, Count = {Sect3Count}")
 
-    #TODO Parse LOD Info
     for lodc in range(Sect3Count):
         Sect3AEnd = f.tell() + f.readLong()
         PolyTotal = f.readLong()
@@ -274,7 +321,7 @@ def import_d3dmesh(filepath,
         IDHeaderLen = f.readLong() - 4
         BoneIDOffset_array.append(f.tell())
         BoneIDCount = f.readLong()
-        print(f"Section 3D (Bone IDs) start @{f.tell()}, Count = {BoneIDCount}")
+        printifv(f"Section 3D (Bone IDs) start @{f.tell()}, Count = {BoneIDCount}")
         for bid in range(BoneIDCount):
             BoneHash2, BoneHash1 = f.readLongs(2)
 
@@ -397,7 +444,7 @@ def import_d3dmesh(filepath,
         UVXMult = f.readFloat(); UVYMult = f.readFloat()
         UVXStart = f.readFloat(); UVYStart = f.readFloat()
         if UVLayer not in [0,1,2,3,4,5]:
-            print("Unknown UV Layer!")
+            printifv("Unknown UV Layer!")
             continue
         UVMults[UVLayer] = [UVXMult, UVYMult]
         UVStarts[UVLayer] = [UVXStart, UVYStart]
@@ -505,7 +552,7 @@ def import_d3dmesh(filepath,
     
     match VertFlags:
         case 0x00|0x01|0x03|0x05|0x09|0x21:
-            print(f"Skipping useless VertFlags {VertFlags:x}")
+            printifv(f"Skipping useless VertFlags {VertFlags:x}")
         case 0x31:
             VertStartB = f.tell()
             f.seek_abs(VertStart)
@@ -595,8 +642,8 @@ def import_d3dmesh(filepath,
         #TODO parse UV4
         pass
 
-    for polystruct in PolyStruct_array:
-        print(f"Polygon_Info_Dict {polystruct}")
+    for polyn,polystruct in enumerate(PolyStruct_array):
+        printifv(f"Polygon_Info_Dict #{polyn} {polystruct}")
     
     parse_lods = parse_lods and Sect3Count > 1
 
@@ -607,10 +654,10 @@ def import_d3dmesh(filepath,
             joined_faces_array = []
             for polystruct in PolyStruct_array:
                 if polystruct['LODNum'] == lodnum:
+                    vertexstart_offset = polystruct['VertexStart']
                     for y in range(polystruct['PolygonCount']):
-                        Faces3 = AllFace_array[polystruct['PolygonStart']+y-2]
-                        for fv in Faces3:
-                            fv += polystruct['VertexStart']
+                        Faces3 = AllFace_array[polystruct['PolygonStart']+y-1]
+                        Faces3 = [fv + vertexstart_offset for fv in Faces3]
                         joined_faces_array.append(Faces3)
                         #mat_id_array.append(polystruct['MatNum'])
             name = f"{D3DName}" + (f" (LOD #{lodnum})" if parse_lods else "")
@@ -626,10 +673,10 @@ def import_d3dmesh(filepath,
             for polynum,polystruct in enumerate(PolyStruct_array):
                 face_array = []
                 if polystruct['LODNum'] == lodnum:
+                    vertexstart_offset = polystruct['VertexStart']
                     for y in range(polystruct['PolygonCount']):
                         Faces3 = AllFace_array[polystruct['PolygonStart']+y-1]
-                        for fv in Faces3:
-                            fv += polystruct['VertexStart']
+                        Faces3 = [fv + vertexstart_offset for fv in Faces3]
                         face_array.append(Faces3)
                         mat_id_array.append(polystruct['MatNum'])
                         name = f"{D3DName}_" + f"{polynum}".zfill(3) + (f" (LOD #{lodnum})" if parse_lods else "")
@@ -646,3 +693,62 @@ def import_d3dmesh(filepath,
     for res_data in res:
         res_models.append(buildModel(**res_data))
     return res_models
+
+mat_type_lookup = {
+    ("98369708","82a34f02"):("Anisotropy","Map"),
+    ("714d2344","5936b35d"):("Anisotropy Mask","Map"),
+    ("7501e041","ac72a988"):("Anisotropy Tangent","Map"),
+    ("b8b04ddf","1796f446"):("Bump","Map"),
+    ("72507eea","6ef21aee"):("Color Mask","Map"),
+    ("2b6c4784","5f607734"):("Damage Mask","Map A"),
+    ("ec7d65b8","a55e2c81"):("Damage Mask","Map B"),
+    ("36170f97","445b6e2e"):("Decal Diffuse","Map"),
+    ("a1f1257a","331854c4"):("Decal Mask","Map"),
+    ("9cf676c6","403c9784"):("Decal Normal","Map"),
+    ("4930b970","a7fd511f"):("Detail","Map"),
+    ("df7e4122","56e87e74"):("Detail","Map B"),
+    ("cb433436","edca9efb"):("Detail Gloss","Map"),
+    ("bf468ef4","80aeeb89"):("Detail Mask","Map"),
+    ("63ee638","83014f19"):("Detail Normal","Map"),
+    ("706cf2aa","57a7a206"):("Detail Normal","Map"),
+    ("d49d30f6","4a580c6f"):("Detail Normal","Map A"),
+    ("138c12ca","b06657da"):("Detail Normal","Map B"),
+    ("517cf321","198c6149"):("Detail Normal","Map C"),
+    ("bdcd25f2","f4199e3"):("Packed Detail","Map"),
+    ("8648fa82","d1dbee1a"):("Diffuse","Map"),
+    ("94a590de","74b1f5c1"):("Diffuse","Map B"),
+    ("dc6e83a0","253f163a"):("Diffuse LOD","Map"),
+    ("b3022ea7","fd418b40"):("Emission","Map"),
+    ("bdb4c92a","546fb889"):("Emission","Map B"),
+    ("13eee658","65dfc90f"):("Environment","Map"),
+    ("257c2a45","683f7d2f"):("Environment","Map"),
+    ("8cadb260","98df1108"):("Flow","Map"),
+    ("64fba83e","34dd3959"):("Gloss","Map"),
+    ("2642d6b4","c8eccaa9"):("Gradient","Map"),
+    ("a334f76c","317a0c02"):("Gradient","Map"),
+    ("2aa89260","d8661f89"):("Grime","Map"),
+    ("66cd6e57","fa58a246"):("Height","Map"),
+    ("ff787a61","eac8a5b5"):("Ink","Map"),
+    ("17afd53","2445b8b8"):("Microdetail Diffuse","Map"),
+    ("cb5b9a7f","52168a41"):("Microdetail Normal","Map"),
+    ("1e3f6b9f","2550389d"):("Normal","Map"),
+    ("3f380050","afd9f81f"):("Normal","Map B"),
+    ("436206e6","8a9e7cca"):("Normal","Map B"),
+    ("7498a5f1","b80ad419"):("Normal Alternate","Map"),
+    ("caaae643","2af348c0"):("Occlusion","Map"),
+    ("62c49575","78189f07"):("Occlusion","Map"),
+    ("533f479d","8bf0e5e"):("Rain Fall","Map"),
+    ("2eba1f4b","ba7a1543"):("Rain Wet","Map"),
+    ("4e2ed73c","e95b0e15"):("Reflection","Map"),
+    ("c8c94155","fb7c634b"):("Specular","Map"),
+    ("d5b57775","db361670"):("Specular","Map"),
+    ("120621d5","fad4c090"):("Specular","Map B"),
+    ("37571b60","b1f61180"):("Tangent","Map B"),
+    ("a45200a2","22dc2d80"):("Thickness","Map") ,
+    ("8cf38a52","66aaa7a4"):("Transition Normal","Map"),
+    ("87b579ec","18fbd4d"):("Visibility Mask","Map"),
+    ("d7ea3553","4dbc457d"):("Wrinkle Mask","Map A"),
+    ("10fb176f","b7821ec8"):("Wrinkle Mask","Map B"),
+    ("340c569","ce9e059f"):("Wrinkle Normal","Map"),
+    ("a13d14fb","b436f23b"):("Wrinkle Normal","Map"),
+}
