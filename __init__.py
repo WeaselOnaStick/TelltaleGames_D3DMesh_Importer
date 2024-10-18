@@ -99,7 +99,7 @@ class D3DMesh_ImportOperator(bpy.types.Operator, ImportHelper):
 
     verbose: bpy.props.BoolProperty(
         name="Verbose Console Output",
-        description="Output extra info to the console",
+        description="Output extra info to the console\nMay slow down operation",
         default=True,
     )
     
